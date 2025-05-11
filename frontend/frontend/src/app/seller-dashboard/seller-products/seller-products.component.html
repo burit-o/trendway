@@ -48,15 +48,16 @@
             </span>
           </td>
           <td class="text-center">
-            <button class="btn btn-sm btn-primary me-1" title="Edit" (click)="openEditModal(product)">
-              <i class="bi bi-pencil-square"></i>
-            </button>
-            <button *ngIf="product.active" class="btn btn-sm btn-warning" title="Set Inactive" (click)="toggleProductStatus(product)">
-              <i class="bi bi-eye-slash"></i>
-            </button>
-            <button *ngIf="!product.active" class="btn btn-sm btn-success" title="Set Active" (click)="toggleProductStatus(product)">
-              <i class="bi bi-eye"></i>
-            </button>
+            <div class="btn-group" role="group">
+              <button class="btn btn-sm btn-outline-primary" title="Düzenle" (click)="openEditModal(product)">
+                <i class="bi bi-pencil"></i> Düzenle
+              </button>
+              <button class="btn btn-sm" [ngClass]="product.active ? 'btn-outline-warning' : 'btn-outline-success'" 
+                    (click)="toggleProductStatus(product)" title="{{ product.active ? 'Devre Dışı Bırak' : 'Etkinleştir' }}">
+                <i class="bi" [ngClass]="product.active ? 'bi-toggle-off' : 'bi-toggle-on'"></i>
+                {{ product.active ? 'Devre Dışı Bırak' : 'Etkinleştir' }}
+              </button>
+            </div>
           </td>
         </tr>
       </tbody>
