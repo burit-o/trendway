@@ -1,24 +1,33 @@
 import { Address } from './address.model';
 
+// Product için basit bir arayüz (OrderItem içinde kullanılacak)
+export interface ProductLite {
+  id: number;
+  name: string;
+  imageUrls?: string[]; // Backend'deki Product modeline göre ayarlanmalı
+  // Gerekirse diğer product alanları eklenebilir
+}
+
 export interface OrderItem {
-    id?: number;
-    productId: number;
-    productName: string;
-    quantity: number;
-    price: number; // O anki ürün fiyatı
-    imageUrl?: string; // Ürünün küçük resmi için opsiyonel
+  id?: number;
+  product: ProductLite; // productName ve imageUrl yerine product nesnesi
+  quantity: number;
+  priceAtPurchase: number; // price -> priceAtPurchase
+  status: string; // OrderItemStatus (örn: 'PREPARING', 'SHIPPED', 'DELIVERED')
+  // productId alanı backend'den geliyorsa ve gerekliyse eklenebilir,
+  // ancak product.id üzerinden erişilebilir.
 }
 
 export interface Order {
-    id: number;
-    orderTrackingNumber?: string; // Sipariş takip numarası, opsiyonel
-    userId: number;
-    orderDate: string; // veya Date
-    status: 'PENDING' | 'PROCESSING' | 'CONFIRMED' | 'SHIPPED' | 'DELIVERED' | 'CANCELLED' | string;
-    totalAmount: number;
-    items: OrderItem[];
-    shippingAddress: Address; // veya Address ID ve sonra detayları çekilebilir
-    billingAddress?: Address; // Opsiyonel
-    paymentMethod?: string; // Opsiyonel
-    notes?: string; // Müşteri notları, opsiyonel
+  id: number;
+  orderTrackingNumber?: string;
+  userId: number; // veya customer: UserLite;
+  createdAt: string; // orderDate -> createdAt
+  status: string; // OrderStatus (örn: 'PREPARING', 'SHIPPED', 'DELIVERED')
+  totalPrice: number; // totalAmount -> totalPrice
+  items: OrderItem[];
+  shippingAddress: Address;
+  billingAddress?: Address;
+  paymentMethod?: string;
+  notes?: string;
 } 

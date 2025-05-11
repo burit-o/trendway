@@ -230,16 +230,16 @@
                 <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" 
                         [attr.data-bs-target]="'#orderCollapse-' + i" aria-expanded="false" [attr.aria-controls]="'orderCollapse-' + i">
                   <div class="d-flex justify-content-between w-100">
-                    <span>Order #{{ order.orderTrackingNumber || order.id }} - {{ order.orderDate | date:'mediumDate' }}</span>
+                    <span>Order #{{ order.orderTrackingNumber || order.id }} - {{ order.createdAt | date:'mediumDate' }}</span>
                     <span class="badge" [ngClass]="getOrderStatusClass(order.status)">{{ order.status }}</span>
-                    <span>{{ order.totalAmount | currency }}</span>
+                    <span>{{ order.totalPrice | currency }}</span>
                   </div>
                 </button>
               </h2>
               <div [id]="'orderCollapse-' + i" class="accordion-collapse collapse" [attr.aria-labelledby]="'orderHeading-' + i" data-bs-parent="#orderHistoryAccordion">
                 <div class="accordion-body">
-                  <p><strong>Order Date:</strong> {{ order.orderDate | date:'fullDate' }}</p>
-                  <p><strong>Total Amount:</strong> {{ order.totalAmount | currency }}</p>
+                  <p><strong>Order Date:</strong> {{ order.createdAt | date:'fullDate' }}</p>
+                  <p><strong>Total Amount:</strong> {{ order.totalPrice | currency }}</p>
                   <p><strong>Status:</strong> <span class="badge" [ngClass]="getOrderStatusClass(order.status)">{{ order.status }}</span></p>
                   <p *ngIf="order.orderTrackingNumber"><strong>Tracking Number:</strong> {{ order.orderTrackingNumber }}</p>
                   
@@ -247,10 +247,11 @@
                   <ul class="list-group list-group-flush mb-3">
                     <li *ngFor="let item of order.items" class="list-group-item d-flex justify-content-between align-items-center">
                       <div>
-                        <img *ngIf="item.imageUrl" [src]="item.imageUrl" [alt]="item.productName" class="me-2" style="width: 50px; height: 50px; object-fit: cover;">
-                        {{ item.productName }} (x{{ item.quantity }})
+                        <img *ngIf="item.product && item.product.imageUrls && item.product.imageUrls.length > 0" [src]="item.product.imageUrls[0]" [alt]="item.product.name" class="me-2" style="width: 50px; height: 50px; object-fit: cover;">
+                        <img *ngIf="!(item.product && item.product.imageUrls && item.product.imageUrls.length > 0)" src="assets/placeholder.jpg" [alt]="item.product.name" class="me-2" style="width: 50px; height: 50px; object-fit: cover;"> 
+                        {{ item.product.name }} (x{{ item.quantity }})
                       </div>
-                      <span>{{ (item.price * item.quantity) | currency }}</span>
+                      <span>{{ (item.priceAtPurchase * item.quantity) | currency }}</span>
                     </li>
                   </ul>
 

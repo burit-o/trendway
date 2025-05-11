@@ -27,7 +27,7 @@ export class EditProductModalComponent implements OnInit, OnChanges {
       name: ['', Validators.required],
       description: ['', Validators.required],
       price: [0, [Validators.required, Validators.min(0.01)]],
-      imageUrls: this.fb.array([this.fb.control('')]), // Şimdilik ilk görsel
+      imageUrl: [''], // imageUrls dizisi yerine tekil bir alan kullanıyoruz
       active: [true, Validators.required]
     });
   }
@@ -49,14 +49,9 @@ export class EditProductModalComponent implements OnInit, OnChanges {
         name: this.product.name,
         description: this.product.description,
         price: this.product.price,
-        active: this.product.active
+        active: this.product.active,
+        imageUrl: this.product.imageUrls && this.product.imageUrls.length > 0 ? this.product.imageUrls[0] : ''
       });
-      const imageUrlsFormArray = this.editProductForm.get('imageUrls') as FormArray;
-      if (this.product.imageUrls && this.product.imageUrls.length > 0) {
-        imageUrlsFormArray.at(0).setValue(this.product.imageUrls[0]);
-      } else {
-        imageUrlsFormArray.at(0).setValue('');
-      }
     }
 
     if (changes['isVisible'] && this.modalInstance) {
@@ -68,19 +63,20 @@ export class EditProductModalComponent implements OnInit, OnChanges {
     }
   }
   
-  get imageUrlsArray() {
-    return this.editProductForm.get('imageUrls') as FormArray;
-  }
-
   onSave(): void {
+    console.log('[EditProductModal] onSave called.');
+    console.log('[EditProductModal] Form validity:', this.editProductForm.valid);
+    console.log('[EditProductModal] Form value:', this.editProductForm.value);
+
     if (this.editProductForm.valid) {
       const formValue = this.editProductForm.value;
+      console.log('[EditProductModal] Form is valid. Emitting saveProduct event.', formValue);
       const productDataToSave: Partial<Product> = {
         id: formValue.id,
         name: formValue.name,
         description: formValue.description,
         price: formValue.price,
-        imageUrls: [formValue.imageUrls[0] || ''],
+        imageUrls: [formValue.imageUrl || ''], // imageUrl'den bir dizi oluşturuyoruz
         active: formValue.active,
       };
       this.saveProduct.emit(productDataToSave);

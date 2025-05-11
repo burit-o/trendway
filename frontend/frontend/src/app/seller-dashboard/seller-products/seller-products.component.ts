@@ -4,11 +4,12 @@ import { Product } from '../../models/product.model'; // Product modelini import
 import { ProductService } from '../../services/product.service'; // ProductService'i import et
 import { AuthService } from '../../auth/services/auth.service'; // AuthService'i import et
 import { RouterModule } from '@angular/router'; // Gerekirse routerLink için
+import { EditProductModalComponent } from '../edit-product-modal/edit-product-modal.component'; // Edit modal bileşenini import et
 
 @Component({
   selector: 'app-seller-products',
   standalone: true,
-  imports: [CommonModule, RouterModule], // RouterModule eklendi (opsiyonel, butonlar için)
+  imports: [CommonModule, RouterModule, EditProductModalComponent], // EditProductModalComponent eklendi
   templateUrl: './seller-products.component.html',
   // styleUrls: ['./seller-products.component.scss']
 })
@@ -85,12 +86,69 @@ export class SellerProductsComponent implements OnInit {
   }
 
   handleCloseEditModal(): void {
-    // ... existing code ...
+    console.log('Closing edit modal');
+    this.isEditModalVisible = false;
+    this.selectedProductForEdit = null;
   }
 
   toggleProductStatus(product: Product): void {
     console.log('Toggle status for product:', product.name, 'Current active status:', product.active);
-    // TODO: Ürünün aktif/pasif durumunu backend'e bildirme ve UI'ı güncelleme
-    // Örnek: product.active = !product.active; // Bu sadece UI'da geçici değişiklik yapar
+    
+    const newStatus = !product.active;
+    const productId = product.id;
+    
+    if (!productId) {
+      console.error('Cannot toggle status: Product ID is missing');
+      return;
+    }
+
+    // Optimize ederek kullanıcı deneyimini iyileştiriyoruz - Önce UI'ı güncelliyoruz
+    product.active = newStatus; // UI'da hemen değişiklik göster
+
+    // Sonra backende bildir
+    this.productService.updateProduct(productId, { active: newStatus }).subscribe({
+      next: () => {
+        console.log(`Product status successfully changed to ${newStatus ? 'active' : 'inactive'}`);
+        // UI zaten güncellendiği için ek bir işlem yapmaya gerek yok
+      },
+      error: (err) => {
+        console.error('Error updating product status:', err);
+        product.active = !newStatus; // Hata durumunda original duruma geri döndür
+        
+        // Kullanıcıya bir hata mesajı gösterebiliriz (opsiyonel)
+        this.error = 'Failed to update product status. Please try again.';
+        setTimeout(() => this.error = null, 3000); // 3 saniye sonra hata mesajını kaldır
+      }
+    });
+  }
+
+  saveProduct(productData: Partial<Product>): void {
+    console.log('[SellerProducts] saveProduct event received with data:', productData);
+    
+    if (!productData.id) {
+      console.error('Cannot update product: ID is missing');
+      return;
+    }
+    
+    this.productService.updateProduct(productData.id, productData).subscribe({
+      next: (updatedProduct) => {
+        console.log('Product updated successfully:', updatedProduct);
+        
+        // Ürün listesini güncelle
+        const index = this.products.findIndex(p => p.id === updatedProduct.id);
+        if (index !== -1) {
+          this.products[index] = { ...this.products[index], ...updatedProduct };
+        }
+        
+        // Modalı kapat
+        this.handleCloseEditModal();
+      },
+      error: (err) => {
+        console.error('Error updating product:', err);
+        // Kullanıcıya hata mesajı gösterebiliriz
+        this.error = 'Failed to update product. Please try again.';
+        setTimeout(() => this.error = null, 3000);
+      }
+    });
   }
 } 

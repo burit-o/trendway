@@ -19,4 +19,7 @@ public interface OrderRepository extends JpaRepository<Order, Long> {
             @Param("productId") Long productId,
             @Param("status") OrderStatus status
     );
+
+    @Query("SELECT DISTINCT o FROM Order o JOIN o.items oi JOIN oi.product p WHERE p.seller.id = :sellerId ORDER BY o.createdAt DESC")
+    List<Order> findOrdersBySellerId(@Param("sellerId") Long sellerId);
 }

@@ -125,7 +125,7 @@ export class ProfileComponent implements OnInit {
     this.orderError = null;
     this.orderService.getOrdersByUserId(userId).subscribe({
       next: (data) => {
-        this.orders = data.sort((a, b) => new Date(b.orderDate).getTime() - new Date(a.orderDate).getTime());
+        this.orders = data.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
         this.isLoadingOrders = false;
       },
       error: (err) => {

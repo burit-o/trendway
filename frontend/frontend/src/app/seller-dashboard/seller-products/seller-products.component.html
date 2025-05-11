@@ -40,7 +40,7 @@
           <td>
             <div>{{ product.name }}</div>
           </td>
-          <td><small class="text-muted">{{ product.category?.name || 'N/A' }}</small></td>
+          <td><small class="text-muted">{{ product.category.name || 'N/A' }}</small></td>
           <td>{{ product.price | currency }}</td>
           <td>
             <span class="badge" [ngClass]="product.active ? 'bg-success' : 'bg-secondary'">
@@ -50,12 +50,12 @@
           <td class="text-center">
             <div class="btn-group" role="group">
               <button class="btn btn-sm btn-outline-primary" title="Düzenle" (click)="openEditModal(product)">
-                <i class="bi bi-pencil"></i> Düzenle
+                <i class="bi bi-pencil"></i> Edit
               </button>
               <button class="btn btn-sm" [ngClass]="product.active ? 'btn-outline-warning' : 'btn-outline-success'" 
                     (click)="toggleProductStatus(product)" title="{{ product.active ? 'Devre Dışı Bırak' : 'Etkinleştir' }}">
                 <i class="bi" [ngClass]="product.active ? 'bi-toggle-off' : 'bi-toggle-on'"></i>
-                {{ product.active ? 'Devre Dışı Bırak' : 'Etkinleştir' }}
+                {{ product.active ? 'Deactivate ' : 'Activate' }}
               </button>
             </div>
           </td>
@@ -63,4 +63,12 @@
       </tbody>
     </table>
   </div>
-</div> 
+</div>
+
+<!-- Edit Product Modal -->
+<app-edit-product-modal
+  [isVisible]="isEditModalVisible"
+  [product]="selectedProductForEdit"
+  (closeModal)="handleCloseEditModal()"
+  (saveProduct)="saveProduct($event)">
+</app-edit-product-modal> 

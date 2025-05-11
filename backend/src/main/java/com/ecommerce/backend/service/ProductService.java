@@ -114,4 +114,38 @@ public class ProductService {
         }
     }
 
+    public Product updateProductDetails(Long productId, Product productDetails, String sellerEmail) {
+        Product existingProduct = productRepository.findById(productId)
+                .orElseThrow(() -> new RuntimeException("Product not found with ID: " + productId));
+
+        User seller = userRepository.findByEmail(sellerEmail)
+                .orElseThrow(() -> new RuntimeException("Seller not found with email: " + sellerEmail));
+
+        if (!existingProduct.getSeller().getId().equals(seller.getId())) {
+            throw new RuntimeException("Forbidden: You can only update your own products."); // Daha spesifik bir exception atılabilir
+        }
+
+        // Güncellenebilir alanları ayarla
+        if (productDetails.getName() != null) {
+            existingProduct.setName(productDetails.getName());
+        }
+        if (productDetails.getDescription() != null) {
+            existingProduct.setDescription(productDetails.getDescription());
+        }
+        if (productDetails.getPrice() != null) {
+            existingProduct.setPrice(productDetails.getPrice());
+        }
+        if (productDetails.getImageUrls() != null && !productDetails.getImageUrls().isEmpty()) {
+            // Frontend sadece bir URL gönderiyorsa ve bu ilk URL olacaksa:
+            // mevcut listeyi temizleyip yenisini ekleyebiliriz ya da daha karmaşık bir birleştirme logiği olabilir.
+            // Şimdilik basitçe ilk gelen URL'yi alıyoruz veya listenin tamamını güncelliyoruz.
+            existingProduct.setImageUrls(productDetails.getImageUrls()); 
+        }
+        // active durumu için productDetails'den gelen değeri alalım
+        existingProduct.setActive(productDetails.isActive());
+        // stock durumu şimdilik güncellenmiyor, gerekirse eklenebilir
+
+        return productRepository.save(existingProduct);
+    }
+
 }

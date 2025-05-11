@@ -35,5 +35,12 @@ export class OrderService {
     });
   }
   
+  // Satıcının siparişlerini getir
+  getOrdersBySeller(): Observable<Order[]> {
+    // Backend endpoint'i GET /api/orders/seller
+    // Token interceptor'ı sellerId'yi Principal'dan alacak şekilde ayarlandı backend'de.
+    return this.http.get<Order[]>(`${this.apiUrl}/seller`);
+  }
+  
   // TODO: Gelecekte sipariş oluşturma, iptal etme gibi fonksiyonlar eklenebilir.
 } 

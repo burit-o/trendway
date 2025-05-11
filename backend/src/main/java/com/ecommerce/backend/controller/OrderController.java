@@ -184,4 +184,24 @@ public class OrderController {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(false);
         }
     }
+
+    @GetMapping("/seller") // Mevcut sellerId path variable yerine Principal kullanacağız
+    @PreAuthorize("hasRole('SELLER')")
+    public ResponseEntity<?> getOrdersBySeller(Principal principal) {
+        try {
+            User seller = userRepository.findByEmail(principal.getName())
+                    .orElseThrow(() -> new RuntimeException("Seller not found with email: " + principal.getName()));
+
+            if (seller.getId() == null) {
+                return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("Seller ID is missing.");
+            }
+
+            List<Order> orders = orderService.getOrdersBySeller(seller.getId());
+            return ResponseEntity.ok(orders);
+        } catch (Exception e) {
+            logger.error("Failed to fetch orders for seller {}: {}", principal.getName(), e.getMessage(), e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body("Failed to fetch orders: " + e.getMessage());
+        }
+    }
 }

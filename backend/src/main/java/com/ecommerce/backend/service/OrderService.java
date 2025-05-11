@@ -258,10 +258,9 @@ public class OrderService {
     }
 
     public List<Order> getOrdersBySeller(Long sellerId) {
-        // TODO: Bu metodun doğru implementasyonu için OrderRepository'ye satıcıya göre siparişleri getiren bir sorgu eklenmeli.
-        // Örnek: orderRepository.findOrdersBySellerId(sellerId);
-        // Şimdilik boş liste döndürülüyor.
-        return new ArrayList<>();
+        // Kullanıcının varlığını ve rolünü kontrol etmeye gerek yoksa (controller'da yapılabilir),
+        // doğrudan repository metodunu çağırabiliriz.
+        return orderRepository.findOrdersBySellerId(sellerId);
     }
 
 }

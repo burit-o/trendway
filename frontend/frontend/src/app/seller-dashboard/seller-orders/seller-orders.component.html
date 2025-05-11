@@ -1,11 +1,111 @@
-<div class="card">
-  <div class="card-header">
-    <h4>My Orders</h4>
-  </div>
-  <div class="card-body">
-    <p class="text-muted">
-      This section will display your orders. Functionality to be implemented.
-    </p>
-    <!-- Sipariş listesi buraya gelecek -->
+<div class="container-fluid mt-4">
+  <div class="card">
+    <div class="card-header">
+      <h4>My Orders</h4>
+    </div>
+    <div class="card-body">
+      <div *ngIf="isLoading" class="text-center">
+        <div class="spinner-border text-primary" role="status">
+          <span class="visually-hidden">Loading orders...</span>
+        </div>
+        <p class="mt-2">Loading your orders...</p>
+      </div>
+
+      <div *ngIf="!isLoading && error" class="alert alert-danger">
+        {{ error }}
+      </div>
+
+      <div *ngIf="!isLoading && !error && orders.length === 0" class="alert alert-info">
+        You have no orders yet.
+      </div>
+
+      <table *ngIf="!isLoading && !error && orders.length > 0" class="table table-hover">
+        <thead>
+          <tr>
+            <th>Order ID</th>
+            <th>Date</th>
+            <th>Total Amount</th>
+            <th>Status</th>
+            <th>Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          <ng-container *ngFor="let order of orders; let i = index">
+            <tr>
+              <td>#{{ order.id }}</td>
+              <td>{{ order.createdAt | date:'medium' }}</td>
+              <td>{{ order.totalPrice | currency:'USD' }}</td> <!-- Para birimini ve formatını projenize göre ayarlayın -->
+              <td>
+                <span class="badge" [ngClass]="{
+                  'bg-secondary': order.status === 'PREPARING',
+                  'bg-info': order.status === 'SHIPPED',
+                  'bg-success': order.status === 'DELIVERED',
+                  'bg-danger': order.status === 'CANCELLED',
+                  'bg-warning text-dark': order.status === 'RETURN_REQUESTED' || order.status === 'EXCHANGE_REQUESTED',
+                  'bg-dark': order.status === 'RETURNED'
+                }">
+                  {{ order.status }}
+                </span>
+              </td>
+              <td>
+                <button class="btn btn-sm btn-outline-info" (click)="toggleOrderDetails(i)">
+                  <i class="bi" [ngClass]="expandedOrderIndex === i ? 'bi-chevron-up' : 'bi-chevron-down'"></i> Details
+                </button>
+              </td>
+            </tr>
+            <!-- Sipariş Detayları (Açılır Kapanır) -->
+            <tr *ngIf="expandedOrderIndex === i">
+              <td colspan="5">
+                <div class="order-details p-3 bg-light">
+                  <h5>Order Items for #{{ order.id }}</h5>
+                  <table class="table table-sm">
+                    <thead>
+                      <tr>
+                        <th>Image</th>
+                        <th>Product Name</th>
+                        <th>Quantity</th>
+                        <th>Price</th>
+                        <th>Item Status</th>
+                        <th>Item Actions</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      <tr *ngFor="let item of order.items">
+                        <td>
+                           <img [src]="item.product.imageUrls?.[0] || 'assets/placeholder.jpg'" 
+                                [alt]="item.product.name" 
+                                style="width: 50px; height: 50px; object-fit: cover;" 
+                                class="rounded">
+                        </td>
+                        <td>{{ item.product.name }}</td>
+                        <td>{{ item.quantity }}</td>
+                        <td>{{ item.priceAtPurchase | currency:'USD' }}</td>
+                        <td>
+                          <span class="badge" [ngClass]="{
+                            'bg-secondary': item.status === 'PREPARING',
+                            'bg-info': item.status === 'SHIPPED',
+                            'bg-success': item.status === 'DELIVERED',
+                            'bg-danger': item.status === 'CANCELLED',
+                            'bg-warning text-dark': item.status === 'RETURN_REQUESTED' || item.status === 'EXCHANGE_REQUESTED',
+                            'bg-dark': item.status === 'RETURNED'
+                          }">
+                            {{ item.status }}
+                          </span>
+                        </td>
+                        <td>
+                          <!-- TODO: OrderItem durumunu değiştirme ve iptal etme butonları/arayüzü buraya gelecek -->
+                          <button class="btn btn-sm btn-outline-secondary me-1" title="Change Item Status" (click)="openChangeItemStatusModal(order, item)">Change Status</button>
+                          <button class="btn btn-sm btn-outline-danger" title="Cancel Item" (click)="cancelOrderItem(order, item)" [disabled]="item.status === 'CANCELLED' || item.status === 'DELIVERED' || item.status === 'SHIPPED'">Cancel Item</button>
+                        </td>
+                      </tr>
+                    </tbody>
+                  </table>
+                </div>
+              </td>
+            </tr>
+          </ng-container>
+        </tbody>
+      </table>
+    </div>
   </div>
 </div> 

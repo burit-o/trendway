@@ -39,8 +39,8 @@
             </div>
             <div class="col-md-6 mb-3">
               <label for="productImageUrl" class="form-label">Image URL (First Image)</label>
-              <input type="url" class="form-control" id="productImageUrl" [formControl]="imageUrlsArray.at(0)">
-              <!-- FormArray için basit bir validasyon eklenebilir veya boş bırakılabilir -->
+              <input type="url" class="form-control" id="productImageUrl" formControlName="imageUrl">
+              <!-- FormControl olarak düzeltildi -->
             </div>
           </div>
 

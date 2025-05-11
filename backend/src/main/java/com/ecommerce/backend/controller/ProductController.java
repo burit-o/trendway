@@ -82,4 +82,15 @@ public class ProductController {
             return ResponseEntity.notFound().build();
         }
     }
+
+    @PutMapping("/{productId}")
+    @PreAuthorize("hasRole('SELLER')")
+    public ResponseEntity<Product> updateProductDetails(
+            @PathVariable Long productId,
+            @RequestBody Product productDetails,
+            Principal principal
+    ) {
+        Product updatedProduct = productService.updateProductDetails(productId, productDetails, principal.getName());
+        return ResponseEntity.ok(updatedProduct);
+    }
 }
