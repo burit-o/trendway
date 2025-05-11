@@ -1,0 +1,77 @@
+<div class="modal-backdrop" [style.display]="isVisible ? 'block' : 'none'" (click)="onBackdropClick($event)">
+  <div class="modal" tabindex="-1" role="dialog" [style.display]="isVisible ? 'block' : 'none'">
+    <div class="modal-dialog modal-dialog-centered modal-lg" role="document">
+      <div class="modal-content">
+        <form [formGroup]="productForm" (ngSubmit)="onSave()">
+          <div class="modal-header">
+            <h5 class="modal-title">Add New Product</h5>
+            <button type="button" class="btn-close" aria-label="Close" (click)="onClose()"></button>
+          </div>
+          <div class="modal-body">
+            <div class="mb-3">
+              <label for="productName" class="form-label">Product Name</label>
+              <input type="text" id="productName" class="form-control" formControlName="name">
+              <div *ngIf="productForm.get('name')?.invalid && productForm.get('name')?.touched" class="invalid-feedback d-block">
+                Product name is required.
+              </div>
+            </div>
+
+            <div class="mb-3">
+              <label for="productDescription" class="form-label">Description</label>
+              <textarea id="productDescription" class="form-control" formControlName="description" rows="3"></textarea>
+              <div *ngIf="productForm.get('description')?.invalid && productForm.get('description')?.touched" class="invalid-feedback d-block">
+                Description is required.
+              </div>
+            </div>
+
+            <div class="row">
+              <div class="col-md-6 mb-3">
+                <label for="productPrice" class="form-label">Price</label>
+                <input type="number" id="productPrice" class="form-control" formControlName="price">
+                <div *ngIf="productForm.get('price')?.invalid && productForm.get('price')?.touched" class="invalid-feedback d-block">
+                  <span *ngIf="productForm.get('price')?.errors?.['required']">Price is required.</span>
+                  <span *ngIf="productForm.get('price')?.errors?.['min']">Price must be positive.</span>
+                </div>
+              </div>
+              <div class="col-md-6 mb-3">
+                <label for="productStock" class="form-label">Stock</label>
+                <input type="number" id="productStock" class="form-control" formControlName="stock">
+                <div *ngIf="productForm.get('stock')?.invalid && productForm.get('stock')?.touched" class="invalid-feedback d-block">
+                  <span *ngIf="productForm.get('stock')?.errors?.['required']">Stock is required.</span>
+                  <span *ngIf="productForm.get('stock')?.errors?.['min']">Stock must be positive.</span>
+                </div>
+              </div>
+            </div>
+
+            <div class="mb-3">
+              <label for="productCategory" class="form-label">Category</label>
+              <select id="productCategory" class="form-select" formControlName="categoryId">
+                <option [ngValue]="null" disabled>Select a category</option>
+                <option *ngFor="let category of categories" [ngValue]="category.id">{{ category.name }}</option>
+              </select>
+              <div *ngIf="productForm.get('categoryId')?.invalid && productForm.get('categoryId')?.touched" class="invalid-feedback d-block">
+                Category is required.
+              </div>
+            </div>
+
+            <div class="mb-3">
+              <label class="form-label">Image URLs</label>
+              <div formArrayName="imageUrls">
+                <div *ngFor="let imageUrlCtrl of imageUrls.controls; let i = index" class="input-group mb-2">
+                  <input type="url" class="form-control" [formControlName]="i" placeholder="https://example.com/image.jpg">
+                  <button type="button" class="btn btn-outline-danger btn-sm" (click)="removeImageUrlField(i)" [disabled]="imageUrls.controls.length <= 1">Remove</button>
+                </div>
+              </div>
+              <button type="button" class="btn btn-outline-secondary btn-sm mt-2" (click)="addImageUrlField()">Add Another Image URL</button>
+            </div>
+
+          </div>
+          <div class="modal-footer">
+            <button type="button" class="btn btn-outline-secondary" (click)="onClose()">Cancel</button>
+            <button type="submit" class="btn btn-primary" [disabled]="productForm.invalid">Save Product</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+</div> 
