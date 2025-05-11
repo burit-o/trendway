@@ -1,0 +1,55 @@
+.star-rating {
+  display: inline-block;
+  span {
+    font-size: 1.5rem; // Yıldız boyutu
+    cursor: pointer;
+    padding: 0 2px;
+    // transition: color 0.2s ease-in-out; // Transition icon üzerinde olacak
+
+    i { // İkonu doğrudan hedefle
+      color: #ccc; // Varsayılan ikon rengi (gri)
+      transition: color 0.2s ease-in-out;
+    }
+
+    // Her zaman en yüksek önceliğe sahip: Seçili yıldızların içindeki ikon sarıdır.
+    &.selected {
+      i {
+        color: #ffc107 !important; // Bootstrap warning rengi (sarı)
+      }
+    }
+  }
+
+  // Yıldız grubuna (star-rating div'ine) mouse ile gelindiğinde:
+  &:hover {
+    span {
+      // Fare imleci hangi yıldızın üzerindeyse (span:hover),
+      // o yıldız ve ondan sonraki tüm kardeşleri (span:hover ~ span)
+      // içindeki ikonlar geçici olarak sarı olur.
+      // .selected class'ına sahip olanların ikonları !important sayesinde sarı kalacaktır.
+      &:hover,
+      &:hover ~ span {
+        i {
+          color: #ffc107;
+        }
+      }
+    }
+  }
+}
+
+.product-image {
+    max-height: 500px; /* Veya istediğiniz bir yükseklik */
+    object-fit: contain; /* Resmin tamamını göster, gerekirse boşluk bırak */
+    width: 100%;
+}
+
+.product-image-placeholder {
+    max-height: 500px;
+    object-fit: contain;
+    width: 100%;
+    background-color: #f8f9fa; /* Hafif bir arkaplan */
+}
+
+.product-detail-card {
+    border: none;
+    box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+}

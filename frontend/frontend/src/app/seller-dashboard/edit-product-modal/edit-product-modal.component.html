@@ -1,0 +1,60 @@
+<div class="modal fade" id="editProductModal" tabindex="-1" aria-labelledby="editProductModalLabel" aria-hidden="true">
+  <div class="modal-dialog modal-lg">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="editProductModalLabel">Edit Product: {{ product?.name }}</h5>
+        <button type="button" class="btn-close" (click)="onCancel()" aria-label="Close"></button>
+      </div>
+      <div class="modal-body">
+        <form [formGroup]="editProductForm" (ngSubmit)="onSave()">
+          <div class="mb-3">
+            <label for="productName" class="form-label">Product Name</label>
+            <input type="text" class="form-control" id="productName" formControlName="name"
+                   [ngClass]="{ 'is-invalid': editProductForm.get('name')?.invalid && editProductForm.get('name')?.touched }">
+            <div *ngIf="editProductForm.get('name')?.invalid && editProductForm.get('name')?.touched" class="invalid-feedback">
+              Product name is required.
+            </div>
+          </div>
+
+          <div class="mb-3">
+            <label for="productDescription" class="form-label">Description</label>
+            <textarea class="form-control" id="productDescription" rows="3" formControlName="description"
+                      [ngClass]="{ 'is-invalid': editProductForm.get('description')?.invalid && editProductForm.get('description')?.touched }"></textarea>
+            <div *ngIf="editProductForm.get('description')?.invalid && editProductForm.get('description')?.touched" class="invalid-feedback">
+              Description is required.
+            </div>
+          </div>
+
+          <div class="row">
+            <div class="col-md-6 mb-3">
+              <label for="productPrice" class="form-label">Price</label>
+              <input type="number" class="form-control" id="productPrice" formControlName="price"
+                     [ngClass]="{ 'is-invalid': editProductForm.get('price')?.invalid && editProductForm.get('price')?.touched }">
+              <div *ngIf="editProductForm.get('price')?.errors?.['required'] && editProductForm.get('price')?.touched" class="invalid-feedback">
+                Price is required.
+              </div>
+              <div *ngIf="editProductForm.get('price')?.errors?.['min'] && editProductForm.get('price')?.touched" class="invalid-feedback">
+                Price must be greater than 0.
+              </div>
+            </div>
+            <div class="col-md-6 mb-3">
+              <label for="productImageUrl" class="form-label">Image URL (First Image)</label>
+              <input type="url" class="form-control" id="productImageUrl" [formControl]="imageUrlsArray.at(0)">
+              <!-- FormArray için basit bir validasyon eklenebilir veya boş bırakılabilir -->
+            </div>
+          </div>
+
+          <div class="mb-3 form-check">
+            <input type="checkbox" class="form-check-input" id="productActive" formControlName="active">
+            <label class="form-check-label" for="productActive">Active (Product is available for sale)</label>
+          </div>
+
+          <div class="modal-footer">
+            <button type="button" class="btn btn-secondary" (click)="onCancel()">Cancel</button>
+            <button type="submit" class="btn btn-primary" [disabled]="editProductForm.invalid">Save Changes</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+</div> 

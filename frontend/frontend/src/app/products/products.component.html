@@ -1,0 +1,202 @@
+<div class="container-fluid">
+  <!-- Header Section -->
+  <nav class="navbar navbar-expand-lg navbar-light bg-light mb-4">
+    <div class="container">
+      <a class="navbar-brand d-flex align-items-center" href="#" (click)="onSelectCategory()">
+        <img src="https://i.imgur.com/18peO8G.png" alt="Trendway Logo" style="height: 80px;">
+      </a>
+
+      <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNavContent" aria-controls="navbarNavContent" aria-expanded="false" aria-label="Toggle navigation">
+        <span class="navbar-toggler-icon"></span>
+      </button>
+
+      <div class="collapse navbar-collapse" id="navbarNavContent">
+        <ul class="navbar-nav me-auto mb-2 mb-lg-0 mt-3">
+          <li class="nav-item">
+            <a class="nav-link" href="javascript:void(0)" (click)="onSelectCategory()">All Products</a>
+          </li>
+          <li *ngIf="isLoadingCategories" class="nav-item">
+            <span class="nav-link">
+                <span class="spinner-border spinner-border-sm"></span> Loading Categories...
+            </span>
+          </li>
+          <li *ngIf="categoryError && !isLoadingCategories" class="nav-item">
+            <span class="nav-link text-danger">Error loading categories</span>
+          </li>
+          <li class="nav-item" *ngFor="let category of categories">
+            <a class="nav-link" href="javascript:void(0)" (click)="onSelectCategory(category)">
+              {{ category.name }}
+            </a>
+          </li>
+        </ul>
+
+        <!-- Right side menu -->
+        <div class="d-flex align-items-center ms-auto">
+          <!-- Cart Icon -->
+          <a class="nav-link position-relative me-3" routerLink="/cart" title="View Cart">
+            <i class="bi bi-cart3 fs-5"></i>
+            <span *ngIf="cartItemCount > 0"
+                  class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger">
+              {{cartItemCount}}
+              <span class="visually-hidden">items in cart</span>
+            </span>
+          </a>
+
+          <!-- New Profile & Auth Buttons -->
+          <ng-container *ngIf="isLoggedIn; else loggedOutUser">
+            <a class="nav-link ms-2" routerLink="/profile" title="Profile">
+              <i class="bi bi-person-fill fs-5"></i>
+            </a>
+            <a class="nav-link ms-2" (click)="logout()" title="Logout" style="cursor:pointer;">
+              <i class="bi bi-box-arrow-right fs-5"></i>
+            </a>
+          </ng-container>
+          <ng-template #loggedOutUser>
+            <a class="nav-link ms-2" routerLink="/auth/login">Login</a>
+            <a class="nav-link ms-2" routerLink="/auth/register">Register</a>
+          </ng-template>
+        </div>
+      </div>
+    </div>
+  </nav>
+
+  <!-- Main Content -->
+  <div class="container">
+    <!-- Error Message -->
+    <div *ngIf="error" class="error-message mb-4">
+      <i class="bi bi-exclamation-circle me-2"></i>
+      {{error}}
+      <button class="btn btn-link text-danger p-0 ms-3" (click)="retry()">Try Again</button>
+    </div>
+
+    <div class="row">
+      <!-- Filters Sidebar -->
+      <div class="col-lg-3 mb-4">
+        <div class="card">
+          <div class="card-body">
+            <h5 class="card-title mb-4">Filters</h5>
+
+            <!-- Price Range -->
+            <div class="mb-4">
+              <label class="form-label">Price Range</label>
+              <div class="d-flex gap-2">
+                <input type="number" class="form-control" [(ngModel)]="minPrice" placeholder="Min">
+                <input type="number" class="form-control" [(ngModel)]="maxPrice" placeholder="Max">
+              </div>
+              <button class="btn btn-primary btn-sm mt-2" (click)="applyPriceFilter()">Apply</button>
+            </div>
+
+            <!-- Sort Options -->
+            <div class="mb-4">
+              <label class="form-label">Sort By</label>
+              <select class="form-select" [(ngModel)]="sortBy" (change)="applySorting()">
+                <option value="price_asc">Price: Low to High</option>
+                <option value="price_desc">Price: High to Low</option>
+                <option value="rating">Rating</option>
+              </select>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Products Grid -->
+      <div class="col-lg-9">
+        <!-- Loading State -->
+        <div *ngIf="isLoading" class="text-center py-5">
+          <div class="spinner-border text-primary" role="status">
+            <span class="visually-hidden">Loading...</span>
+          </div>
+          <p class="mt-3 text-muted">Loading products...</p>
+        </div>
+
+        <!-- Empty State -->
+        <div *ngIf="!isLoading && filteredProducts.length === 0" class="empty-state">
+          <i class="bi bi-box"></i>
+          <h3>No Products Found</h3>
+          <p>Try adjusting your filters or search criteria</p>
+        </div>
+
+        <!-- Products Grid -->
+        <div *ngIf="!isLoading && filteredProducts.length > 0" class="row row-cols-1 row-cols-md-2 row-cols-lg-3 g-4">
+          <div class="col" *ngFor="let product of filteredProducts">
+            <div class="card h-100">
+              <a [routerLink]="['/products', product.id]" class="text-decoration-none text-dark">
+                <div class="card-img-container">
+                  <img [src]="product.imageUrls && product.imageUrls.length > 0 ? product.imageUrls[0] : 'assets/placeholder.jpg'"
+                       class="card-img-top"
+                       [ngClass]="{'loading': loadingImages[product.id]}"
+                       [alt]="product.name"
+                       (load)="handleImageLoad($event, product.id)"
+                       (error)="handleImageError($event)">
+                </div>
+                <div class="card-body">
+                  <h5 class="card-title">{{product.name}}</h5>
+                  <p class="card-text text-truncate">{{product.description}}</p>
+                </div>
+              </a>
+              <div class="card-body pt-0">
+                <div class="d-flex justify-content-between align-items-center mb-2">
+                  <span class="text-primary fw-bold">{{product.price | currency}}</span>
+                  <div class="d-flex align-items-center">
+                    <span class="text-warning me-1">
+                      <i class="bi bi-star-fill"></i>
+                    </span>
+                    <span>{{product.averageRating}}</span>
+                  </div>
+                </div>
+              </div>
+              <div class="card-footer bg-transparent border-top-0">
+                <button class="btn btn-primary w-100"
+                        (click)="addToCart(product)"
+                        [disabled]="!isLoggedIn || isAddingToCart">
+                  <span *ngIf="isAddingToCart" class="spinner-border spinner-border-sm me-2"></span>
+                  Add to Cart
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Contact Us Section -->
+  <footer class="bg-light mt-5 py-5">
+    <div class="container">
+      <div class="row">
+        <div class="col-md-6">
+          <h4>Contact Us</h4>
+          <p>Have questions? We're here to help!</p>
+          <ul class="list-unstyled">
+            <li><i class="bi bi-envelope me-2"></i> support&#64;ecommerce.com</li>
+            <li><i class="bi bi-telephone me-2"></i> +1 (555) 123-4567</li>
+            <li><i class="bi bi-geo-alt me-2"></i> 123 Main St, City, Country</li>
+          </ul>
+        </div>
+        <div class="col-md-6">
+          <h4>Follow Us</h4>
+          <div class="social-links">
+            <a href="#" class="me-3"><i class="bi bi-facebook"></i></a>
+            <a href="#" class="me-3"><i class="bi bi-twitter"></i></a>
+            <a href="#" class="me-3"><i class="bi bi-instagram"></i></a>
+            <a href="#" class="me-3"><i class="bi bi-linkedin"></i></a>
+          </div>
+        </div>
+      </div>
+    </div>
+  </footer>
+</div>
+
+<!-- Cart Error Toast -->
+<div *ngIf="cartError" class="position-fixed bottom-0 end-0 p-3" style="z-index: 11">
+  <div class="toast show" role="alert">
+    <div class="toast-header">
+      <i class="bi bi-exclamation-circle text-danger me-2"></i>
+      <strong class="me-auto">Error</strong>
+      <button type="button" class="btn-close" (click)="cartError = null"></button>
+    </div>
+    <div class="toast-body">
+      {{cartError}}
+    </div>
+  </div>
+</div>

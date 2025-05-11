@@ -1,0 +1,43 @@
+.card {
+  transition: transform 0.2s;
+  border: none;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+
+  &:hover {
+    transform: translateY(-5px);
+  }
+
+  .card-img-container {
+    position: relative;
+    width: 100%;
+    padding-top: 75%; // 4:3 aspect ratio
+    overflow: hidden;
+    background-color: #f8f9fa;
+
+    .card-img-top {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      object-fit: contain;
+      transition: opacity 0.3s ease;
+
+      &.loading {
+        opacity: 0;
+      }
+    }
+  }
+}
+
+.social-links {
+  a {
+    color: #333;
+    font-size: 1.5rem;
+    text-decoration: none;
+
+    &:hover {
+      color: #007bff;
+    }
+  }
+}

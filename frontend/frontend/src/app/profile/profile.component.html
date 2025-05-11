@@ -1,0 +1,322 @@
+<nav class="navbar navbar-expand-lg navbar-light bg-light mb-4">
+    <div class="container">
+      <a class="navbar-brand d-flex align-items-center" href="#" (click)="onSelectCategory()">
+        <img src="https://i.imgur.com/18peO8G.png" alt="Trendway Logo" style="height: 80px;">
+      </a>
+
+      <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNavContent" aria-controls="navbarNavContent" aria-expanded="false" aria-label="Toggle navigation">
+        <span class="navbar-toggler-icon"></span>
+      </button>
+
+      <div class="collapse navbar-collapse" id="navbarNavContent">
+        <ul class="navbar-nav me-auto mb-2 mb-lg-0 mt-3">
+          <li class="nav-item">
+            <a class="nav-link" href="javascript:void(0)" (click)="onSelectCategory()">All Products</a>
+          </li>
+          <li *ngIf="isLoadingCategories" class="nav-item">
+            <span class="nav-link">
+                <span class="spinner-border spinner-border-sm"></span> Loading Categories...
+            </span>
+          </li>
+          <li *ngIf="categoryError && !isLoadingCategories" class="nav-item">
+            <span class="nav-link text-danger">Error loading categories</span>
+          </li>
+          <li class="nav-item" *ngFor="let category of categories">
+            <a class="nav-link" href="javascript:void(0)" (click)="onSelectCategory(category)">
+              {{ category.name }}
+            </a>
+          </li>
+        </ul>
+
+        <!-- Right side menu -->
+        <div class="d-flex align-items-center ms-auto">
+          <!-- Cart Icon -->
+          <a class="nav-link position-relative me-3" routerLink="/cart" title="View Cart">
+            <i class="bi bi-cart3 fs-5"></i>
+            <span *ngIf="cartItemCount > 0"
+                  class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger">
+              {{cartItemCount}}
+              <span class="visually-hidden">items in cart</span>
+            </span>
+          </a>
+
+          <!-- New Profile & Auth Buttons -->
+          <ng-container *ngIf="isLoggedIn; else loggedOutUser">
+            <a class="nav-link ms-2" routerLink="/profile" title="Profile">
+              <i class="bi bi-person-fill fs-5"></i>
+            </a>
+            <a class="nav-link ms-2" (click)="logout()" title="Logout" style="cursor:pointer;">
+              <i class="bi bi-box-arrow-right fs-5"></i>
+            </a>
+          </ng-container>
+          <ng-template #loggedOutUser>
+            <a class="nav-link ms-2" routerLink="/auth/login">Login</a>
+            <a class="nav-link ms-2" routerLink="/auth/register">Register</a>
+          </ng-template>
+        </div>
+      </div>
+    </div>
+  </nav>
+
+<div class="container mt-4">
+  <div *ngIf="currentUser" class="profile-header mb-4">
+    <h2>Welcome, {{ currentUser.firstName }} {{ currentUser.lastName }}!</h2>
+    <p class="text-muted">Manage your profile, addresses, and orders.</p>
+  </div>
+  <div *ngIf="!currentUser" class="alert alert-warning">
+    Loading user information or not logged in.
+  </div>
+
+  <div class="row">
+    <div class="col-md-3">
+      <!-- Navigasyon Menüsü (sol taraf) -->
+      <div class="list-group">
+        <a href="#account-details" class="list-group-item list-group-item-action active" data-bs-toggle="tab">Account Details</a>
+        <a href="#address-book" class="list-group-item list-group-item-action" data-bs-toggle="tab">Address Book</a>
+        <a href="#order-history" class="list-group-item list-group-item-action" data-bs-toggle="tab">Order History</a>
+        <a href="#change-password" class="list-group-item list-group-item-action" data-bs-toggle="tab">Change Password</a>
+      </div>
+    </div>
+    <div class="col-md-9">
+      <!-- Tab İçerikleri -->
+      <div class="tab-content">
+        <div class="tab-pane fade show active" id="account-details">
+          <h4>Account Details</h4>
+          
+          <div *ngIf="accountUpdateSuccess" class="alert alert-success">
+            {{ accountUpdateSuccess }}
+          </div>
+          <div *ngIf="accountUpdateError" class="alert alert-danger">
+            {{ accountUpdateError }}
+          </div>
+
+          <div *ngIf="currentUser">
+            <div class="mb-3">
+              <label class="form-label"><strong>First Name:</strong></label>
+              <p>{{ currentUser.firstName || 'N/A' }}</p>
+            </div>
+            <div class="mb-3">
+              <label class="form-label"><strong>Last Name:</strong></label>
+              <p>{{ currentUser.lastName || 'N/A' }}</p>
+            </div>
+            <div class="mb-3">
+              <label class="form-label"><strong>Email:</strong></label>
+              <p>{{ currentUser.email || 'N/A' }}</p>
+              <small class="form-text text-muted">Email address cannot be changed.</small>
+            </div>
+          </div>
+          
+          <div *ngIf="!currentUser && !accountUpdateError">
+            <p>Loading account details...</p>
+          </div>
+        </div>
+        <div class="tab-pane fade" id="address-book">
+          <div class="d-flex justify-content-between align-items-center mb-3">
+            <h4>Address Book</h4>
+            <button class="btn btn-primary btn-sm" (click)="openAddressForm()" *ngIf="!showAddressForm">
+              <i class="bi bi-plus-circle"></i> Add New Address
+            </button>
+          </div>
+
+          <!-- Adres Ekleme/Düzenleme Formu -->
+          <div *ngIf="showAddressForm" class="card mb-4">
+            <div class="card-body">
+              <h5 class="card-title">{{ editingAddressId ? 'Edit Address' : 'Add New Address' }}</h5>
+              <form [formGroup]="addressForm" (ngSubmit)="saveAddress()">
+                <div class="row">
+                  <div class="col-md-12 mb-3">
+                    <label for="contactPhone" class="form-label">Contact Phone (Optional)</label>
+                    <input type="text" id="contactPhone" class="form-control" formControlName="contactPhone">
+                  </div>
+                </div>
+                <div class="mb-3">
+                  <label for="street" class="form-label">Street Address</label>
+                  <input type="text" id="street" class="form-control" formControlName="street"
+                         [ngClass]="{ 'is-invalid': addressFormSubmitted && af['street'].errors }">
+                  <div *ngIf="addressFormSubmitted && af['street'].errors?.['required']" class="invalid-feedback">
+                    Street address is required.
+                  </div>
+                </div>
+                <div class="row">
+                  <div class="col-md-6 mb-3">
+                    <label for="city" class="form-label">City</label>
+                    <input type="text" id="city" class="form-control" formControlName="city"
+                           [ngClass]="{ 'is-invalid': addressFormSubmitted && af['city'].errors }">
+                    <div *ngIf="addressFormSubmitted && af['city'].errors?.['required']" class="invalid-feedback">
+                      City is required.
+                    </div>
+                  </div>
+                </div>
+                <div class="row">
+                  <div class="col-md-6 mb-3">
+                    <label for="zipCode" class="form-label">ZIP/Postal Code</label>
+                    <input type="text" id="zipCode" class="form-control" formControlName="zipCode"
+                           [ngClass]="{ 'is-invalid': addressFormSubmitted && af['zipCode'].errors }">
+                    <div *ngIf="addressFormSubmitted && af['zipCode'].errors?.['required']" class="invalid-feedback">
+                      ZIP Code is required.
+                    </div>
+                  </div>
+                  <div class="col-md-6 mb-3">
+                    <label for="country" class="form-label">Country</label>
+                    <input type="text" id="country" class="form-control" formControlName="country"
+                           [ngClass]="{ 'is-invalid': addressFormSubmitted && af['country'].errors }">
+                    <div *ngIf="addressFormSubmitted && af['country'].errors?.['required']" class="invalid-feedback">
+                      Country is required.
+                    </div>
+                  </div>
+                </div>
+                <div class="d-flex justify-content-end">
+                  <button type="button" class="btn btn-outline-secondary me-2" (click)="closeAddressForm()">Cancel</button>
+                  <button type="submit" class="btn btn-success" [disabled]="addressForm.invalid || isLoadingAddresses">
+                    {{ isLoadingAddresses ? 'Saving...' : (editingAddressId ? 'Update Address' : 'Save Address') }}
+                  </button>
+                </div>
+              </form>
+            </div>
+          </div>
+
+          <!-- Adres Listesi -->
+          <div *ngIf="isLoadingAddresses && !showAddressForm" class="text-center">
+            <div class="spinner-border text-primary" role="status"><span class="visually-hidden">Loading addresses...</span></div>
+          </div>
+          <div *ngIf="addressError && !isLoadingAddresses && !showAddressForm" class="alert alert-danger">
+            {{ addressError }}
+          </div>
+          
+          <div *ngIf="addresses.length === 0 && !isLoadingAddresses && !addressError && !showAddressForm" class="alert alert-info">
+            You have no saved addresses. Click "Add New Address" to add one.
+          </div>
+
+          <div *ngIf="addresses.length > 0 && !isLoadingAddresses && !showAddressForm" class="list-group">
+            <div *ngFor="let address of addresses" class="list-group-item list-group-item-action flex-column align-items-start mb-2 position-relative">
+              <div class="d-flex w-100 justify-content-between">
+                <h6 class="mb-1">
+                  Street: {{ address.street }}
+                </h6>
+              </div>
+              <p class="mb-1">
+                {{ address.street }}, {{ address.city }}, {{ address.state ? address.state + ', ' : '' }}{{ address.zipCode }}<br>
+                {{ address.country }}
+              </p>
+              <p *ngIf="address.contactPhone" class="mb-1"><small>Phone: {{ address.contactPhone }}</small></p>
+              
+              <div class="address-actions position-absolute bottom-0 end-0 mb-2 me-2">
+                <button class="btn btn-sm btn-outline-secondary me-1" (click)="openAddressForm(address)" title="Edit">
+                  <i class="bi bi-pencil-square"></i>
+                </button>
+                <button class="btn btn-sm btn-outline-danger me-1" (click)="deleteAddress(address.id!)" title="Delete">
+                  <i class="bi bi-trash"></i>
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="tab-pane fade" id="order-history">
+          <h4>Order History</h4>
+          
+          <div *ngIf="isLoadingOrders" class="text-center py-3">
+            <div class="spinner-border text-primary" role="status"><span class="visually-hidden">Loading orders...</span></div>
+          </div>
+          <div *ngIf="orderError && !isLoadingOrders" class="alert alert-danger">
+            {{ orderError }}
+          </div>
+          <div *ngIf="orders.length === 0 && !isLoadingOrders && !orderError" class="alert alert-info">
+            You have no past orders.
+          </div>
+
+          <div *ngIf="orders.length > 0 && !isLoadingOrders" class="accordion" id="orderHistoryAccordion">
+            <div *ngFor="let order of orders; let i = index" class="accordion-item mb-2">
+              <h2 class="accordion-header" [id]="'orderHeading-' + i">
+                <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" 
+                        [attr.data-bs-target]="'#orderCollapse-' + i" aria-expanded="false" [attr.aria-controls]="'orderCollapse-' + i">
+                  <div class="d-flex justify-content-between w-100">
+                    <span>Order #{{ order.orderTrackingNumber || order.id }} - {{ order.orderDate | date:'mediumDate' }}</span>
+                    <span class="badge" [ngClass]="getOrderStatusClass(order.status)">{{ order.status }}</span>
+                    <span>{{ order.totalAmount | currency }}</span>
+                  </div>
+                </button>
+              </h2>
+              <div [id]="'orderCollapse-' + i" class="accordion-collapse collapse" [attr.aria-labelledby]="'orderHeading-' + i" data-bs-parent="#orderHistoryAccordion">
+                <div class="accordion-body">
+                  <p><strong>Order Date:</strong> {{ order.orderDate | date:'fullDate' }}</p>
+                  <p><strong>Total Amount:</strong> {{ order.totalAmount | currency }}</p>
+                  <p><strong>Status:</strong> <span class="badge" [ngClass]="getOrderStatusClass(order.status)">{{ order.status }}</span></p>
+                  <p *ngIf="order.orderTrackingNumber"><strong>Tracking Number:</strong> {{ order.orderTrackingNumber }}</p>
+                  
+                  <h6>Items:</h6>
+                  <ul class="list-group list-group-flush mb-3">
+                    <li *ngFor="let item of order.items" class="list-group-item d-flex justify-content-between align-items-center">
+                      <div>
+                        <img *ngIf="item.imageUrl" [src]="item.imageUrl" [alt]="item.productName" class="me-2" style="width: 50px; height: 50px; object-fit: cover;">
+                        {{ item.productName }} (x{{ item.quantity }})
+                      </div>
+                      <span>{{ (item.price * item.quantity) | currency }}</span>
+                    </li>
+                  </ul>
+
+                  <h6>Shipping Address:</h6>
+                  <address>
+                    {{ order.shippingAddress.street }}<br>
+                    {{ order.shippingAddress.city }}, {{ order.shippingAddress.state ? order.shippingAddress.state + ', ' : '' }}{{ order.shippingAddress.zipCode }}<br>
+                    {{ order.shippingAddress.country }}
+                    <span *ngIf="order.shippingAddress.contactPhone"><br>Phone: {{ order.shippingAddress.contactPhone }}</span>
+                  </address>
+                  
+                  <button class="btn btn-sm btn-outline-primary" (click)="reorder(order)" disabled>Reorder</button> <!-- TODO: Reorder fonksiyonu -->
+                  <button class="btn btn-sm btn-outline-secondary ms-2" (click)="viewInvoice(order)" disabled>View Invoice</button> <!-- TODO: Fatura görüntüleme -->
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="tab-pane fade" id="change-password">
+          <h4>Change Password</h4>
+
+          <div *ngIf="changePasswordSuccess" class="alert alert-success">
+            {{ changePasswordSuccess }}
+          </div>
+          <div *ngIf="changePasswordError" class="alert alert-danger">
+            {{ changePasswordError }}
+          </div>
+
+          <form [formGroup]="changePasswordForm" (ngSubmit)="changePassword()">
+            <div class="mb-3">
+              <label for="currentPassword" class="form-label">Current Password</label>
+              <input type="password" id="currentPassword" class="form-control" formControlName="currentPassword"
+                     [ngClass]="{ 'is-invalid': changePasswordFormSubmitted && cpd['currentPassword'].errors }">
+              <div *ngIf="changePasswordFormSubmitted && cpd['currentPassword'].errors?.['required']" class="invalid-feedback">
+                Current password is required.
+              </div>
+            </div>
+            <div class="mb-3">
+              <label for="newPassword" class="form-label">New Password</label>
+              <input type="password" id="newPassword" class="form-control" formControlName="newPassword"
+                     [ngClass]="{ 'is-invalid': changePasswordFormSubmitted && (cpd['newPassword'].errors || changePasswordForm.hasError('mismatch')) }">
+              <div *ngIf="changePasswordFormSubmitted && cpd['newPassword'].errors?.['required']" class="invalid-feedback">
+                New password is required.
+              </div>
+              <div *ngIf="changePasswordFormSubmitted && cpd['newPassword'].errors?.['minlength']" class="invalid-feedback">
+                Password must be at least 6 characters long.
+              </div>
+            </div>
+            <div class="mb-3">
+              <label for="confirmNewPassword" class="form-label">Confirm New Password</label>
+              <input type="password" id="confirmNewPassword" class="form-control" formControlName="confirmNewPassword"
+                     [ngClass]="{ 'is-invalid': changePasswordFormSubmitted && (cpd['confirmNewPassword'].errors || changePasswordForm.hasError('mismatch')) }">
+              <div *ngIf="changePasswordFormSubmitted && cpd['confirmNewPassword'].errors?.['required']" class="invalid-feedback">
+                Please confirm your new password.
+              </div>
+              <div *ngIf="changePasswordFormSubmitted && !cpd['confirmNewPassword'].errors?.['required'] && changePasswordForm.hasError('mismatch')" class="invalid-feedback">
+                Passwords do not match.
+              </div>
+            </div>
+            <button type="submit" class="btn btn-primary" [disabled]="changePasswordForm.invalid || isChangingPassword">
+              <span *ngIf="isChangingPassword" class="spinner-border spinner-border-sm me-1"></span>
+              {{ isChangingPassword ? 'Changing...' : 'Change Password' }}
+            </button>
+          </form>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

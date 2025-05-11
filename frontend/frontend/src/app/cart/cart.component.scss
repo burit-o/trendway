@@ -1,0 +1,54 @@
+.cart-table {
+  th, td {
+    vertical-align: middle;
+  }
+
+  .product-image {
+    width: 75px;
+    height: 75px;
+    object-fit: cover;
+    border-radius: 0.25rem; // Bootstrap'in .rounded sınıfıyla aynı
+    border: 1px solid #dee2e6; // Hafif bir kenarlık
+  }
+
+  .input-group {
+    max-width: 150px; // HTML'dekiyle uyumlu
+    .form-control {
+      text-align: center;
+      // Genişliği input-group içinde esnek bırakmak daha iyi olabilir
+      // veya HTML'de olduğu gibi style ile sabitlenebilir.
+      // Şimdilik flex ile orantılı dağılımı tercih edebiliriz:
+      // flex: 1 1 auto;
+      // min-width: 40px; // HTML'deki gibi bir minimum genişlik
+    }
+    .btn {
+      padding: 0.375rem 0.5rem; // Butonların padding'ini biraz artır
+      i {
+        vertical-align: middle;
+      }
+    }
+  }
+  
+  .updating-spinner-container {
+    height: 20px; // Spinner için bir alan ayır, böylece layout kaymaz
+    .spinner-border-sm {
+        vertical-align: middle;
+    }
+  }
+}
+
+.empty-cart-message {
+  i {
+    font-size: 5rem; // İkonu biraz daha büyüt
+  }
+}
+
+.order-summary-card {
+  .card-title {
+    font-weight: 500;
+  }
+  .btn-lg {
+    padding-top: 0.75rem;
+    padding-bottom: 0.75rem;
+  }
+}

@@ -1,0 +1,26 @@
+@import 'bootstrap/dist/css/bootstrap.min.css';
+
+/* Zorla açık tema uygula */
+html, body, app-root, * {
+  background-color: white !important;
+  color: black !important;
+  border-color: black !important;
+}
+
+a, button, h1, h2, h3, h4, h5, h6, p, div, span {
+  color: black !important;
+}
+/* Dark mode bastırma */
+html, body, app-root, * {
+    background-color: white !important;
+    color: black !important;
+    border-color: black !important;
+    box-shadow: none !important;
+  }
+  
+  a, button, h1, h2, h3, h4, h5, h6, p, div, span, input, textarea, select {
+    background-color: white !important;
+    color: black !important;
+    border-color: black !important;
+  }
+  
