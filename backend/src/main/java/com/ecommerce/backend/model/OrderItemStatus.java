@@ -5,5 +5,6 @@ public enum OrderItemStatus {
     SHIPPED,        // Gönderildi
     DELIVERED,      // Teslim edildi
     EXCHANGED,      // Değiştirildi
-    CANCELLED       // İptal edildi
+    CANCELLED,      // Müşteri tarafından iptal edildi (varsayım)
+    CANCELLED_BY_SELLER // Satıcı tarafından iptal edildi (yeni)
 }

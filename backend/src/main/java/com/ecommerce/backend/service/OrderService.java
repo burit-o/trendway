@@ -138,28 +138,101 @@ public class OrderService {
         return savedOrder;
     }
 
-    public void updateOrderItemStatus(Long orderItemId, OrderItemStatus status) {
-        OrderItem orderItem = orderItemRepository.findById(orderItemId)
-                .orElseThrow(() -> new RuntimeException("Order item not found"));
+    // Helper metod: Bir siparişin tüm kalemlerinin durumlarına göre genel sipariş durumunu günceller
+    private void updateOverallOrderStatus(Order order) {
+        if (order == null || order.getItems() == null || order.getItems().isEmpty()) {
+            return; // İşlem yapılacak item yoksa veya order null ise çık
+        }
 
-        orderItem.setStatus(status);
-        orderItemRepository.save(orderItem);
+        boolean allItemsCancelled = order.getItems().stream()
+            .allMatch(item -> item.getStatus() == OrderItemStatus.CANCELLED || 
+                               item.getStatus() == OrderItemStatus.CANCELLED_BY_SELLER);
+        
+        if (allItemsCancelled) {
+            order.setStatus(OrderStatus.CANCELLED);
+            orderRepository.save(order);
+            return;
+        }
 
-        // ✅ Order'ı da güncelle
-        Order order = orderItem.getOrder();
-        boolean allShipped = order.getItems().stream().allMatch(item -> item.getStatus() == OrderItemStatus.SHIPPED);
+        // Eğer hepsi iptal değilse, diğer durumları kontrol et
         boolean allDelivered = order.getItems().stream()
+                .filter(item -> item.getStatus() != OrderItemStatus.CANCELLED && item.getStatus() != OrderItemStatus.CANCELLED_BY_SELLER)
                 .allMatch(item -> item.getStatus() == OrderItemStatus.DELIVERED);
+        boolean allShipped = order.getItems().stream()
+                .filter(item -> item.getStatus() != OrderItemStatus.CANCELLED && item.getStatus() != OrderItemStatus.CANCELLED_BY_SELLER)
+                .allMatch(item -> item.getStatus() == OrderItemStatus.SHIPPED || item.getStatus() == OrderItemStatus.DELIVERED);
 
         if (allDelivered) {
             order.setStatus(OrderStatus.DELIVERED);
         } else if (allShipped) {
             order.setStatus(OrderStatus.SHIPPED);
         } else {
-            order.setStatus(OrderStatus.PREPARING);
+            // Eğer en az bir tane bile PREPARING varsa veya farklı aktif statüler varsa PREPARING olabilir.
+            // Ya da daha karmaşık bir mantık gerekebilir. Şimdilik PREPARING olarak bırakalım.
+            // İptal olmayan ve teslim edilmemiş/gönderilmemiş item varsa PREPARING'dir.
+            boolean anyPreparing = order.getItems().stream()
+                .filter(item -> item.getStatus() != OrderItemStatus.CANCELLED && item.getStatus() != OrderItemStatus.CANCELLED_BY_SELLER)
+                .anyMatch(item -> item.getStatus() == OrderItemStatus.PREPARING);
+            if (anyPreparing) {
+                order.setStatus(OrderStatus.PREPARING);
+            }
+            // Eğer hepsi SHIPPED/DELIVERED/CANCELLED değilse ve PREPARING de yoksa, durum karışık olabilir.
+            // Bu durumda, siparişin ilk durumuna (genellikle PREPARING) veya daha genel bir duruma (PROCESSING) dönülebilir.
+            // Şimdilik, PREPARING yoksa ve hepsi SHIPPED/DELIVERED değilse durum değişmeyebilir veya mevcut mantıkla devam edebilir.
+        }
+        orderRepository.save(order);
+    }
+
+    public void updateOrderItemStatus(Long orderItemId, OrderItemStatus status) {
+        OrderItem orderItem = orderItemRepository.findById(orderItemId)
+                .orElseThrow(() -> new RuntimeException("Order item not found"));
+
+        // Ürün sahibinin kontrolü (opsiyonel, controller'da yapılabilir ama burada da olması iyi olur)
+        // Bu metod genel bir status güncelleme olduğu için şimdilik satıcı kontrolü eklemiyorum.
+        // Satıcıya özel iptal için ayrı bir metodumuz olacak.
+
+        orderItem.setStatus(status);
+        orderItemRepository.save(orderItem);
+
+        updateOverallOrderStatus(orderItem.getOrder());
+    }
+
+    @Transactional
+    public OrderItem cancelOrderItemBySeller(Long orderItemId, String sellerEmail) {
+        User seller = userRepository.findByEmail(sellerEmail)
+                .orElseThrow(() -> new RuntimeException("Seller not found with email: " + sellerEmail));
+
+        OrderItem orderItem = orderItemRepository.findById(orderItemId)
+                .orElseThrow(() -> new RuntimeException("Order item not found with ID: " + orderItemId));
+
+        Product product = orderItem.getProduct();
+        if (product == null || product.getSeller() == null) {
+            throw new RuntimeException("Product or product seller information is missing for the order item.");
         }
 
-        orderRepository.save(order);
+        if (!product.getSeller().getId().equals(seller.getId())) {
+            throw new SecurityException("You are not authorized to cancel this order item as you are not the seller of the product.");
+        }
+
+        if (orderItem.getStatus() == OrderItemStatus.DELIVERED) {
+            throw new IllegalStateException("Delivered order items cannot be cancelled.");
+        }
+
+        if (orderItem.getStatus() == OrderItemStatus.CANCELLED || orderItem.getStatus() == OrderItemStatus.CANCELLED_BY_SELLER) {
+            throw new IllegalStateException("Order item is already cancelled.");
+        }
+
+        // Stoğu geri ekle
+        product.setStock(product.getStock() + orderItem.getQuantity());
+        productRepository.save(product);
+
+        orderItem.setStatus(OrderItemStatus.CANCELLED_BY_SELLER);
+        OrderItem updatedOrderItem = orderItemRepository.save(orderItem);
+
+        // Siparişin genel durumunu güncelle
+        updateOverallOrderStatus(orderItem.getOrder());
+
+        return updatedOrderItem;
     }
 
     public void updateOrderStatus(Long orderId, Long sellerId, OrderStatus newStatus) {

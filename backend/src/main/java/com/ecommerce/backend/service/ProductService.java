@@ -26,7 +26,7 @@ public class ProductService {
         return productRepository.findByActiveTrue();
     }
 
-    // Aktif ve admin tarafından silinmemiş ürünleri döndürmek
+    // Aktiff ve admin tarafından silinmemiş ürünleri döndürmek
     public List<Product> getActiveAndNotDeletedProducts() {
         List<Product> products = productRepository.findByActiveTrueAndDeletedByAdminFalse();
         products.forEach(this::calculateAndSetProductRating);
