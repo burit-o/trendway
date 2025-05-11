@@ -2,6 +2,7 @@ import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { Order } from '../models/order.model';
+import { OrderItem } from '../models/order-item.model';
 
 @Injectable({
   providedIn: 'root'
@@ -40,6 +41,21 @@ export class OrderService {
     // Backend endpoint'i GET /api/orders/seller
     // Token interceptor'ı sellerId'yi Principal'dan alacak şekilde ayarlandı backend'de.
     return this.http.get<Order[]>(`${this.apiUrl}/seller`);
+  }
+
+  // Sipariş kaleminin durumunu güncelle (genel amaçlı)
+  updateOrderItemStatus(orderItemId: number, status: string): Observable<any> { // Dönen tip backend'e göre ayarlanabilir, şimdilik any
+    return this.http.put(`${this.apiUrl}/update-item-status`, null, {
+      params: {
+        orderItemId: orderItemId.toString(),
+        status: status
+      }
+    });
+  }
+
+  // Satıcının bir sipariş kalemini iptal etmesi
+  cancelOrderItemBySeller(orderItemId: number): Observable<OrderItem> { // Backend OrderItem döndürüyor -> Frontend OrderItem modeli ile değiştirildi
+    return this.http.put<OrderItem>(`${this.apiUrl}/item/${orderItemId}/cancel-by-seller`, {}); // Frontend OrderItem modeli ile değiştirildi
   }
   
   // TODO: Gelecekte sipariş oluşturma, iptal etme gibi fonksiyonlar eklenebilir.

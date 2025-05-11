@@ -82,12 +82,12 @@
                         <td>{{ item.priceAtPurchase | currency:'USD' }}</td>
                         <td>
                           <span class="badge" [ngClass]="{
-                            'bg-secondary': item.status === 'PREPARING',
-                            'bg-info': item.status === 'SHIPPED',
-                            'bg-success': item.status === 'DELIVERED',
-                            'bg-danger': item.status === 'CANCELLED',
-                            'bg-warning text-dark': item.status === 'RETURN_REQUESTED' || item.status === 'EXCHANGE_REQUESTED',
-                            'bg-dark': item.status === 'RETURNED'
+                            'bg-secondary': item.status === orderItemStatus.PREPARING,
+                            'bg-info': item.status === orderItemStatus.SHIPPED,
+                            'bg-success': item.status === orderItemStatus.DELIVERED,
+                            'bg-danger': item.status === orderItemStatus.CANCELED, 
+                            'bg-warning text-dark': item.status === orderItemStatus.RETURN_REQUESTED || item.status === orderItemStatus.EXCHANGE_REQUESTED,
+                            'bg-dark': item.status === orderItemStatus.RETURNED
                           }">
                             {{ item.status }}
                           </span>
@@ -95,7 +95,12 @@
                         <td>
                           <!-- TODO: OrderItem durumunu değiştirme ve iptal etme butonları/arayüzü buraya gelecek -->
                           <button class="btn btn-sm btn-outline-secondary me-1" title="Change Item Status" (click)="openChangeItemStatusModal(order, item)">Change Status</button>
-                          <button class="btn btn-sm btn-outline-danger" title="Cancel Item" (click)="cancelOrderItem(order, item)" [disabled]="item.status === 'CANCELLED' || item.status === 'DELIVERED' || item.status === 'SHIPPED'">Cancel Item</button>
+                          <button class="btn btn-sm btn-outline-danger" 
+                                  title="Cancel Item" 
+                                  (click)="promptCancelOrderItem(item, order.id)" 
+                                  [disabled]="item.status === orderItemStatus.DELIVERED || item.status === orderItemStatus.CANCELED || item.status === orderItemStatus.CANCELLED_BY_SELLER || item.status === orderItemStatus.SHIPPED">
+                            Cancel Item
+                          </button>
                         </td>
                       </tr>
                     </tbody>

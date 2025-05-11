@@ -2,6 +2,7 @@ import { Component, OnInit } from '@angular/core';
 import { CommonModule, DatePipe } from '@angular/common';
 import { RouterModule } from '@angular/router';
 import { Order, OrderItem } from '../../models/order.model';
+import { OrderItemStatus } from '../../models/order-item.model';
 import { OrderService } from '../../services/order.service';
 import { AuthService } from '../../auth/services/auth.service'; // Seller ID için
 
@@ -18,6 +19,9 @@ export class SellerOrdersComponent implements OnInit {
   error: string | null = null;
   currentSellerId: number | null = null;
   expandedOrderIndex: number | null = null; // Hangi siparişin detaylarının açık olduğunu tutar
+
+  // OrderItemStatus enum'ını template'te kullanmak için ekle
+  public orderItemStatus = OrderItemStatus;
 
   constructor(
     private orderService: OrderService,
@@ -68,11 +72,34 @@ export class SellerOrdersComponent implements OnInit {
     // Bu modal, OrderItemStatus enum'undaki değerleri listelemeli
   }
 
-  cancelOrderItem(order: Order, item: OrderItem): void {
-    console.log("Cancel item:", item, "in order:", order);
-    // TODO: OrderItem iptal etme mantığı eklenecek
-    // Backend'e istek gönderilecek, stok güncellenecek, UI güncellenecek
-    // İptal işlemi sonrası siparişin genel durumu da güncellenebilir.
-    alert('Cancel order item functionality is not yet implemented.');
+  promptCancelOrderItem(item: OrderItem, orderId: number): void {
+    if (!item || item.id === undefined) {
+      console.error('Cannot cancel item: Item ID is missing.');
+      this.error = 'Cannot cancel item: Item ID is missing.';
+      return;
+    }
+
+    const confirmCancel = confirm(
+      `Are you sure you want to cancel the item "${item.productName}"? ` +
+      `This action cannot be undone and the stock will be updated.`
+    );
+
+    if (confirmCancel) {
+      this.isLoading = true; 
+      this.orderService.cancelOrderItemBySeller(item.id).subscribe({
+        next: (updatedItem) => {
+          console.log('Item cancelled successfully by seller:', updatedItem);
+          this.isLoading = false;
+          this.loadSellerOrders(); 
+          // Başarı mesajı (örn: toaster service ile)
+        },
+        error: (err) => {
+          this.isLoading = false;
+          console.error('Error cancelling item by seller:', err);
+          this.error = `Failed to cancel item: ${err.error?.message || err.message}`;
+          setTimeout(() => this.error = null, 5000);
+        }
+      });
+    }
   }
 } 

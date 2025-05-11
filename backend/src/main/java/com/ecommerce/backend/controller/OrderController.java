@@ -171,6 +171,24 @@ public class OrderController {
         return ResponseEntity.ok("Değişim onaylandı, sipariş tekrar hazırlanıyor.");
     }
 
+    @PutMapping("/item/{orderItemId}/cancel-by-seller")
+    @PreAuthorize("hasRole('SELLER')")
+    public ResponseEntity<?> cancelOrderItemBySeller(
+            @PathVariable Long orderItemId,
+            Principal principal) {
+        try {
+            String sellerEmail = principal.getName();
+            com.ecommerce.backend.model.OrderItem updatedOrderItem = orderService.cancelOrderItemBySeller(orderItemId, sellerEmail);
+            return ResponseEntity.ok(updatedOrderItem);
+        } catch (IllegalStateException e) {
+            return ResponseEntity.status(HttpStatus.CONFLICT).body(e.getMessage()); // Örn: Zaten iptal edilmiş veya teslim edilmiş
+        } catch (SecurityException e) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).body(e.getMessage()); // Yetkisiz işlem
+        } catch (RuntimeException e) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(e.getMessage()); // Örn: Ürün veya satıcı bulunamadı
+        }
+    }
+
     @GetMapping("/check-purchase")
     @PreAuthorize("hasRole('CUSTOMER')")
     public ResponseEntity<Boolean> checkPurchase(
