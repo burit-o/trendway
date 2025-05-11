@@ -7,6 +7,7 @@ import com.ecommerce.backend.model.User;
 import com.ecommerce.backend.repository.UserRepository;
 import com.ecommerce.backend.service.OrderService;
 import com.ecommerce.backend.service.StripeService;
+import com.ecommerce.backend.dto.OrderDto;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.RequiredArgsConstructor;
 
@@ -19,6 +20,7 @@ import org.springframework.web.bind.annotation.*;
 
 import java.security.Principal;
 import java.util.List;
+import java.util.stream.Collectors;
 
 @RestController
 @RequestMapping("/api/orders")
@@ -197,7 +199,11 @@ public class OrderController {
             }
 
             List<Order> orders = orderService.getOrdersBySeller(seller.getId());
-            return ResponseEntity.ok(orders);
+            // Order listesini OrderDto listesine dönüştür
+            List<OrderDto> orderDtos = orders.stream()
+                                             .map(OrderDto::fromEntity)
+                                             .collect(Collectors.toList());
+            return ResponseEntity.ok(orderDtos); // DTO listesini döndür
         } catch (Exception e) {
             logger.error("Failed to fetch orders for seller {}: {}", principal.getName(), e.getMessage(), e);
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
