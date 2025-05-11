@@ -1,31 +1,33 @@
 import { Address } from './address.model';
 
-// Product için basit bir arayüz (OrderItem içinde kullanılacak)
+// ProductLite interface'i artık OrderItem içinde doğrudan kullanılmayacağı için kaldırılabilir veya
+// başka bir yerde kullanılıyorsa kalabilir. Şimdilik yorum satırına alıyorum veya siliyorum.
+/* 
 export interface ProductLite {
   id: number;
   name: string;
-  imageUrls?: string[]; // Backend'deki Product modeline göre ayarlanmalı
-  // Gerekirse diğer product alanları eklenebilir
+  imageUrls?: string[];
 }
+*/
 
 export interface OrderItem {
   id?: number;
-  product: ProductLite; // productName ve imageUrl yerine product nesnesi
+  productId?: number; // Backend DTO'sundan gelen productId
+  productName?: string; // Backend DTO'sundan gelen productName
+  imageUrl?: string; // Backend DTO'sundan gelen imageUrl
   quantity: number;
-  priceAtPurchase: number; // price -> priceAtPurchase
-  status: string; // OrderItemStatus (örn: 'PREPARING', 'SHIPPED', 'DELIVERED')
-  // productId alanı backend'den geliyorsa ve gerekliyse eklenebilir,
-  // ancak product.id üzerinden erişilebilir.
+  priceAtPurchase: number;
+  status: string;
 }
 
 export interface Order {
   id: number;
   orderTrackingNumber?: string;
-  userId: number; // veya customer: UserLite;
-  createdAt: string; // orderDate -> createdAt
-  status: string; // OrderStatus (örn: 'PREPARING', 'SHIPPED', 'DELIVERED')
-  totalPrice: number; // totalAmount -> totalPrice
-  items: OrderItem[];
+  userId: number;
+  createdAt: string;
+  status: string;
+  totalPrice: number;
+  items: OrderItem[]; // Bu artık güncellenmiş OrderItem'ı kullanacak
   shippingAddress: Address;
   billingAddress?: Address;
   paymentMethod?: string;
