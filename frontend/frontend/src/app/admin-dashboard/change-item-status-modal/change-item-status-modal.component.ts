@@ -60,18 +60,4 @@ export class ChangeItemStatusModalComponent implements OnInit {
   onClose(): void {
     this.closeModal.emit();
   }
-  
-  // Sipariş durumlarını Türkçe'ye çeviren metod
-  getStatusTranslation(status: string): string {
-    switch (status) {
-      case 'PREPARING': return 'HAZIRLANIYOR';
-      case 'SHIPPED': return 'KARGODA';
-      case 'DELIVERED': return 'TESLİM EDİLDİ';
-      case 'CANCELLED': return 'İPTAL EDİLDİ';
-      case 'REFUNDED': return 'İADE EDİLDİ';
-      case 'EXCHANGE_REQUESTED': return 'DEĞİŞİM TALEBİ';
-      case 'RETURNED': return 'İADE EDİLDİ';
-      default: return status;
-    }
-  }
 }

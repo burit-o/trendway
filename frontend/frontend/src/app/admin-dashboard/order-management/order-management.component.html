@@ -1,28 +1,28 @@
 <div class="container">
-  <h2 class="mb-4">Sipariş Yönetimi</h2>
+  <h2 class="mb-4">Order Management</h2>
   
   <div *ngIf="!isAdmin" class="alert alert-danger">
-    <strong>Erişim Reddedildi!</strong> Bu sayfayı görüntülemek için yönetici ayrıcalıklarına sahip olmanız gerekir.
-    <div class="mt-2">Kısa süre içinde ana sayfaya yönlendirileceksiniz...</div>
+    <strong>Access Denied!</strong> You need administrator privileges to view this page.
+    <div class="mt-2">You will be redirected to the main page shortly...</div>
   </div>
   
   <div *ngIf="loading" class="text-center my-5">
     <div class="spinner-border" role="status">
-      <span class="visually-hidden">Yükleniyor...</span>
+      <span class="visually-hidden">Loading...</span>
     </div>
   </div>
   
   <div *ngIf="error" class="alert alert-danger">
-    <strong>Hata:</strong> {{ error }}
+    <strong>Error:</strong> {{ error }}
   </div>
 
   <div *ngIf="!loading && !error && orders.length === 0 && isAdmin" class="alert alert-info">
-    Sistemde sipariş bulunamadı.
+    No orders found in the system.
   </div>
 
   <div class="mb-3">
     <button class="btn btn-primary" (click)="refreshOrders()" [disabled]="loading">
-      <i class="bi bi-arrow-clockwise me-2"></i>Siparişleri Yenile
+      <i class="bi bi-arrow-clockwise me-2"></i>Refresh Orders
     </button>
   </div>
   
@@ -30,12 +30,12 @@
     <table class="table table-striped table-hover">
       <thead class="table-dark">
         <tr>
-          <th scope="col">Sipariş NO</th>
-          <th scope="col">Tarih</th>
-          <th scope="col">Müşteri</th>
-          <th scope="col">Toplam Tutar</th>
-          <th scope="col">Durum</th>
-          <th scope="col">İşlemler</th>
+          <th scope="col">Order ID</th>
+          <th scope="col">Date</th>
+          <th scope="col">Customer</th>
+          <th scope="col">Total Amount</th>
+          <th scope="col">Status</th>
+          <th scope="col">Actions</th>
         </tr>
       </thead>
       <tbody>
@@ -43,16 +43,16 @@
           <tr>
             <td>#{{ order.id }}</td>
             <td>{{ order.createdAt | date:'medium' }}</td>
-            <td>{{ order.customerFullName || 'Bilinmiyor' }}</td>
-            <td>₺{{ order.totalPrice ? order.totalPrice.toFixed(2) : '0.00' }}</td>
+            <td>{{ order.customerFullName || 'Unknown' }}</td>
+            <td>${{ order.totalPrice ? order.totalPrice.toFixed(2) : '0.00' }}</td>
             <td>
               <span class="badge" [ngClass]="getStatusClass(order.status)">
-                {{ getStatusTranslation(order.status) }}
+                {{ order.status }}
               </span>
             </td>
             <td>
               <button class="btn btn-sm btn-outline-info" (click)="toggleOrderDetails(i)">
-                <i class="bi" [ngClass]="expandedOrderIndex === i ? 'bi-chevron-up' : 'bi-chevron-down'"></i> Detaylar
+                <i class="bi" [ngClass]="expandedOrderIndex === i ? 'bi-chevron-up' : 'bi-chevron-down'"></i> Details
               </button>
             </td>
           </tr>
@@ -60,17 +60,17 @@
           <tr *ngIf="expandedOrderIndex === i">
             <td colspan="6">
               <div class="card p-3 bg-light">
-                <h5 class="mb-3">Sipariş Ürünleri</h5>
+                <h5 class="mb-3">Order Items</h5>
                 <table class="table table-sm">
                   <thead>
                     <tr>
-                      <th>Görsel</th>
-                      <th>Ürün</th>
-                      <th>Fiyat</th>
-                      <th>Adet</th>
-                      <th>Satıcı</th>
-                      <th>Durum</th>
-                      <th>İşlemler</th>
+                      <th>Image</th>
+                      <th>Product</th>
+                      <th>Price</th>
+                      <th>Quantity</th>
+                      <th>Seller</th>
+                      <th>Status</th>
+                      <th>Actions</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -82,33 +82,33 @@
                              style="width: 60px; height: 60px; object-fit: cover;">
                       </td>
                       <td>{{ item.productName }}</td>
-                      <td>₺{{ item.priceAtPurchase ? item.priceAtPurchase.toFixed(2) : '0.00' }}</td>
+                      <td>${{ item.priceAtPurchase ? item.priceAtPurchase.toFixed(2) : '0.00' }}</td>
                       <td>{{ item.quantity }}</td>
-                      <td>{{ item.sellerName || 'Bilinmeyen Satıcı' }}</td>
+                      <td>{{ item.sellerName || 'Unknown Seller' }}</td>
                       <td>
                         <span class="badge" [ngClass]="getItemStatusClass(item.status)">
-                          {{ getItemStatusTranslation(item.status) }}
+                          {{ item.status }}
                         </span>
                       </td>
                       <td>
                         <button class="btn btn-sm btn-outline-secondary me-1" 
-                                title="Ürün Durumunu Değiştir" 
+                                title="Change Item Status" 
                                 (click)="openChangeItemStatusModal(order, item)"
                                 [disabled]="item.status === orderItemStatus.DELIVERED || 
                                           item.status === orderItemStatus.CANCELED || 
                                           item.status === orderItemStatus.CANCELLED_BY_SELLER || 
                                           item.status === orderItemStatus.REFUNDED">
-                          Durum Değiştir
+                          Change Status
                         </button>
                         <button class="btn btn-sm btn-outline-danger" 
-                                title="Ürünü İptal Et" 
+                                title="Cancel Item" 
                                 (click)="promptCancelOrderItem(item, order.id)" 
                                 [disabled]="item.status === orderItemStatus.DELIVERED || 
                                             item.status === orderItemStatus.CANCELED || 
                                             item.status === orderItemStatus.CANCELLED_BY_SELLER || 
                                             item.status === orderItemStatus.REFUNDED ||
                                             item.status === orderItemStatus.SHIPPED">
-                          İptal Et
+                          Cancel Item
                         </button>
                       </td>
                     </tr>
