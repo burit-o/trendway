@@ -67,25 +67,43 @@ export class LoginComponent implements OnInit {
           .subscribe({
             next: () => {
               console.log(`Product ${addToCartProductId} added to cart for user ${response.userId}`);
-              this.router.navigateByUrl(returnUrl); // returnUrl'e yönlendir
+              // Sepete ürün eklendikten sonra yönlendirme
+              if (response.role === 'CUSTOMER' || response.role === 'USER') {
+                this.router.navigate(['/products']);
+              } else if (response.role === 'ADMIN') {
+                this.router.navigate(['/panel']);
+              } else if (response.role === 'SELLER') {
+                this.router.navigate(['/dashboard']);
+              } else {
+                this.router.navigateByUrl(returnUrl);
+              }
             },
             error: (cartError) => {
               console.error('Failed to add item to cart after login:', cartError);
               // Sepete ekleme başarısız olsa bile kullanıcıyı yönlendir
-              this.router.navigateByUrl(returnUrl);
+              if (response.role === 'CUSTOMER' || response.role === 'USER') {
+                this.router.navigate(['/products']);
+              } else if (response.role === 'ADMIN') {
+                this.router.navigate(['/panel']);
+              } else if (response.role === 'SELLER') {
+                this.router.navigate(['/dashboard']);
+              } else {
+                this.router.navigateByUrl(returnUrl);
+              }
             }
           });
         } else {
           // Normal rol bazlı yönlendirme
           switch(response.role) {
             case 'CUSTOMER':
+            case 'USER':
               this.router.navigate(['/products']);
-              break;
-            case 'SELLER':
-              this.router.navigate(['/dashboard']);
               break;
             case 'ADMIN':
               this.router.navigate(['/panel']);
+              break;
+            case 'SELLER':
+              this.router.navigate(['/dashboard']);
               break;
             default:
               this.router.navigate(['/']);
@@ -94,7 +112,30 @@ export class LoginComponent implements OnInit {
       },
       error: (error) => {
         console.error('Login failed:', error);
-        this.error = error.error?.message || 'An error occurred during login';
+        
+        // Basitleştirilmiş hata yakalama
+        if (error?.error) {
+          // Sunucudan gelen string hata mesajı
+          if (typeof error.error === 'string') {
+            this.error = error.error;
+            
+            // Konsola daha detaylı bilgi
+            if (error.error.includes('banned')) {
+              console.log('Banned user detected:', loginData.email);
+            }
+          } 
+          // Obje olarak gelen hata mesajı
+          else if (error.error.message) {
+            this.error = error.error.message;
+          }
+          // Genel hata durumu
+          else {
+            this.error = 'An error occurred during login. Please try again.';
+          }
+        } else {
+          this.error = 'Connection error. Please check your internet connection.';
+        }
+        
         this.loading = false;
       },
       complete: () => {

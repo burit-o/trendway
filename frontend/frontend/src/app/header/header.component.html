@@ -1,0 +1,37 @@
+<nav class="navbar navbar-expand-lg navbar-light bg-light mb-4">
+  <div class="container">
+    <a class="navbar-brand d-flex align-items-center" href="#" (click)="onLogoClick()">
+      <img src="https://i.imgur.com/18peO8G.png" alt="Trendway Logo" style="height: 80Wpx;">
+    </a>
+
+    <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNavContent" aria-controls="navbarNavContent" aria-expanded="false" aria-label="Toggle navigation">
+      <span class="navbar-toggler-icon"></span>
+    </button>
+
+    <div class="collapse navbar-collapse" id="navbarNavContent">
+      <ul class="navbar-nav me-auto mb-2 mb-lg-0 mt-3">
+        <!-- "All Products" ve Kategori listesi kaldırıldı -->
+      </ul>
+
+      <!-- Right side menu -->
+      <div class="d-flex align-items-center ms-auto">
+        <!-- Sepet ikonu kaldırıldı -->
+
+        <!-- Profile & Auth Buttons -->
+        <ng-container *ngIf="isLoggedIn; else loggedOutUser">
+          <!-- Kullanıcı adı kaldırıldı, her zaman profil ikonu gösterilecek -->
+          <a class="nav-link ms-2" routerLink="/profile" title="Profile">
+            <i class="bi bi-person-fill fs-5"></i>
+          </a>
+          <a class="nav-link ms-2" (click)="logout()" title="Logout" style="cursor:pointer;">
+            <i class="bi bi-box-arrow-right fs-5"></i>
+          </a>
+        </ng-container>
+        <ng-template #loggedOutUser>
+          <a class="nav-link ms-2" routerLink="/auth/login">Login</a>
+          <a class="nav-link ms-2" routerLink="/auth/register">Register</a>
+        </ng-template>
+      </div>
+    </div>
+  </div>
+</nav> 

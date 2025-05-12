@@ -12,6 +12,12 @@ import { RoleGuard } from './auth/guards/role.guard';
 import { SellerProductsComponent } from './seller-dashboard/seller-products/seller-products.component';
 import { SellerOrdersComponent } from './seller-dashboard/seller-orders/seller-orders.component';
 import { RefundRequestsComponent } from './refund-requests/refund-requests.component';
+import { AdminDashboardComponent } from './admin-dashboard/admin-dashboard.component';
+import { UserManagementComponent } from './admin-dashboard/user-management/user-management.component';
+import { ProductManagementComponent } from './admin-dashboard/product-management/product-management.component';
+import { OrderManagementComponent } from './admin-dashboard/order-management/order-management.component';
+import { CategoryManagementComponent } from './admin-dashboard/category-management/category-management.component';
+import { SellerRequestsComponent } from './admin-dashboard/seller-requests/seller-requests.component';
 
 const routes: Routes = [
   {
@@ -61,6 +67,20 @@ const routes: Routes = [
       { path: 'products', component: SellerProductsComponent },
       { path: 'orders', component: SellerOrdersComponent },
       { path: 'refund-requests', component: RefundRequestsComponent }
+    ]
+  },
+  {
+    path: 'panel',
+    component: AdminDashboardComponent,
+    canActivate: [AuthGuard, RoleGuard],
+    data: { expectedRole: 'ADMIN' },
+    children: [
+      { path: '', redirectTo: 'users', pathMatch: 'full' },
+      { path: 'users', component: UserManagementComponent },
+      { path: 'products', component: ProductManagementComponent },
+      { path: 'orders', component: OrderManagementComponent },
+      { path: 'categories', component: CategoryManagementComponent },
+      { path: 'seller-requests', component: SellerRequestsComponent }
     ]
   },
   {

@@ -3,6 +3,7 @@ import { CommonModule } from '@angular/common';
 import { ReactiveFormsModule, FormBuilder, FormGroup, Validators, FormArray } from '@angular/forms';
 import { Product } from '../../models/product.model';
 import { Category } from '../../models/category.model';
+import { CategoryService } from '../../services/category.service';
 
 @Component({
   selector: 'app-add-product-modal',
@@ -18,8 +19,12 @@ export class AddProductModalComponent implements OnInit {
 
   productForm: FormGroup;
   categories: Category[] = []; // Kategori listesi (örneğin servisten alınacak)
+  categoryError: string | null = null; // Kategori yükleme hatası için
 
-  constructor(private fb: FormBuilder) {
+  constructor(
+    private fb: FormBuilder,
+    private categoryService: CategoryService // CategoryService inject edildi
+  ) {
     this.productForm = this.fb.group({
       name: ['', Validators.required],
       description: ['', Validators.required],
@@ -31,13 +36,31 @@ export class AddProductModalComponent implements OnInit {
   }
 
   ngOnInit(): void {
-    // Örnek kategoriler - description alanı kaldırıldı
+    // Statik kategoriler kaldırıldı
+    /*
     this.categories = [
       { id: 1, name: 'Electronics' },
       { id: 2, name: 'Books' },
       { id: 3, name: 'Clothing' },
       { id: 4, name: 'Home & Kitchen' }
     ];
+    */
+    this.loadCategories(); // Kategorileri yükle
+  }
+
+  loadCategories(): void {
+    this.categoryError = null;
+    this.categoryService.getAllCategories().subscribe({
+      next: (data) => {
+        this.categories = data;
+      },
+      error: (err) => {
+        console.error('Error loading categories:', err);
+        this.categoryError = 'Failed to load categories. Please try again later.';
+        // Hata durumunda formu kategori seçimi için devre dışı bırakabiliriz (opsiyonel)
+        this.productForm.get('categoryId')?.disable(); 
+      }
+    });
   }
 
   get imageUrls(): FormArray {

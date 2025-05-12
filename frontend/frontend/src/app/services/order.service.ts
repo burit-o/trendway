@@ -43,20 +43,35 @@ export class OrderService {
     return this.http.get<Order[]>(`${this.apiUrl}/seller`);
   }
 
+  // Admin için tüm siparişleri getir
+  getAllOrders(): Observable<Order[]> {
+    return this.http.get<Order[]>(`${this.apiUrl}/all`);
+  }
+
   // Sipariş kaleminin durumunu güncelle (genel amaçlı)
-  updateOrderItemStatus(orderItemId: number, status: string): Observable<any> { // Dönen tip backend'e göre ayarlanabilir, şimdilik any
+  updateOrderItemStatus(orderItemId: number, status: string): Observable<any> {
+    console.log(`Calling API to update order item ${orderItemId} status to ${status}`);
+    
+    // Backend URL: /api/orders/update-item-status?orderItemId=123&status=SHIPPED
+    // Backend endpoint'i bir body beklemiyor, sadece query parametreleri alıyor
     return this.http.put(`${this.apiUrl}/update-item-status`, null, {
       params: {
         orderItemId: orderItemId.toString(),
         status: status
       },
-      responseType: 'text' // JSON ayrıştırma hatasını önlemek için eklendi
+      responseType: 'text' // Backend text response döndürüyor
     });
   }
 
   // Satıcının bir sipariş kalemini iptal etmesi
   cancelOrderItemBySeller(orderItemId: number): Observable<OrderItem> { // Backend OrderItem döndürüyor -> Frontend OrderItem modeli ile değiştirildi
     return this.http.put<OrderItem>(`${this.apiUrl}/item/${orderItemId}/cancel-by-seller`, {}); // Frontend OrderItem modeli ile değiştirildi
+  }
+  
+  // Admin'in bir sipariş kalemini iptal etmesi
+  cancelOrderItemByAdmin(orderItemId: number): Observable<OrderItem> {
+    // Yeni endpoint'i kullanıyoruz
+    return this.http.put<OrderItem>(`${this.apiUrl}/item/${orderItemId}/cancel-by-admin`, {});
   }
 
   // Müşterinin bir sipariş için iade talebinde bulunması (updated)
@@ -91,5 +106,11 @@ export class OrderService {
     });
   }
   
-  // TODO: Gelecekte sipariş oluşturma, iptal etme gibi fonksiyonlar eklenebilir.
+  // Admin'in tüm siparişi iptal etmesi
+  cancelOrderByAdmin(orderId: number): Observable<string> {
+    return this.http.put(`${this.apiUrl}/cancel`, null, {
+      params: { orderId: orderId.toString() },
+      responseType: 'text'
+    });
+  }
 } 

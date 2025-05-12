@@ -260,7 +260,7 @@
                       
                       <div class="d-flex">
                         <!-- İade Talebi Butonu (Sadece teslim edilmiş ve henüz iade talebi olmayan ürünler için) -->
-                        <button *ngIf="item.status === 'DELIVERED' && !item.refundStatus" 
+                        <button *ngIf="!item.refundStatus" 
                                 class="btn btn-sm btn-outline-warning" 
                                 (click)="requestRefund(order, item)">
                           Request Refund
@@ -269,13 +269,17 @@
                     </li>
                   </ul>
 
-                  <h6>Shipping Address:</h6>
-                  <address>
-                    {{ order.shippingAddress.street }}<br>
-                    {{ order.shippingAddress.city }}, {{ order.shippingAddress.state ? order.shippingAddress.state + ', ' : '' }}{{ order.shippingAddress.zipCode }}<br>
-                    {{ order.shippingAddress.country }}
-                    <span *ngIf="order.shippingAddress.contactPhone"><br>Phone: {{ order.shippingAddress.contactPhone }}</span>
-                  </address>
+                  <!-- Add *ngIf guard for shippingAddress -->
+                  <div *ngIf="order.shippingAddress">
+                    <h6>Shipping Address:</h6>
+                    <address>
+                      {{ order.shippingAddress.street }}<br>
+                      {{ order.shippingAddress.city }}, {{ order.shippingAddress.state ? order.shippingAddress.state + ', ' : '' }}{{ order.shippingAddress.zipCode }}<br>
+                      {{ order.shippingAddress.country }}
+                      <span *ngIf="order.shippingAddress.contactPhone"><br>Phone: {{ order.shippingAddress.contactPhone }}</span>
+                    </address>
+                  </div>
+
                 </div>
               </div>
             </div>

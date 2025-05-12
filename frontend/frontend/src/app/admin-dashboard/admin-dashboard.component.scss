@@ -1,0 +1,37 @@
+// Admin paneli stilleri
+.nav-link {
+  border-radius: 5px;
+  margin-bottom: 5px;
+  
+  &.active {
+    background-color: rgba(255, 255, 255, 0.2) !important;
+    color: white !important;
+  }
+  
+  &:hover:not(.active) {
+    background-color: rgba(255, 255, 255, 0.1);
+  }
+}
+
+#adminSidebar {
+  transition: width 0.3s;
+}
+
+// Responsive ayarlar
+@media (max-width: 768px) {
+  #adminSidebar {
+    width: 60px !important;
+    
+    .nav-item span {
+      display: none;
+    }
+    
+    h4 {
+      font-size: 0;
+      
+      i {
+        font-size: 1.5rem;
+      }
+    }
+  }
+} 

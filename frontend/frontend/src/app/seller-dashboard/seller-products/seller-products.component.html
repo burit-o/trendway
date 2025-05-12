@@ -71,4 +71,12 @@
   [product]="selectedProductForEdit"
   (closeModal)="handleCloseEditModal()"
   (saveProduct)="saveProduct($event)">
-</app-edit-product-modal> 
+</app-edit-product-modal>
+
+<!-- Add Product Modal -->
+<app-add-product-modal
+  *ngIf="isAddModalVisible"
+  [isVisible]="isAddModalVisible"
+  (closeModal)="handleCloseAddModal()"
+  (saveProduct)="handleSaveNewProduct($event)">
+</app-add-product-modal> 

@@ -154,10 +154,18 @@ export class AuthService {
     const currentUser = this.currentUserValue;
     if (!currentUser) return false;
     
-    if (requiredRole === 'CUSTOMER' && currentUser.role === 'USER') {
-      return true; // USER rolü CUSTOMER rolüne de sahip olabilir (kullanıcı/müşteri)
+    // Check the role with and without 'ROLE_' prefix
+    const userRole = currentUser.role;
+    const userRoleWithoutPrefix = userRole.startsWith('ROLE_') ? userRole.substring(5) : userRole;
+    const requiredRoleWithPrefix = requiredRole.startsWith('ROLE_') ? requiredRole : 'ROLE_' + requiredRole;
+    
+    // Special case for USER/CUSTOMER role
+    if (requiredRole === 'CUSTOMER' && (userRole === 'USER' || userRole === 'ROLE_USER')) {
+      return true;
     }
     
-    return currentUser.role === requiredRole;
+    return userRole === requiredRole || 
+           userRole === requiredRoleWithPrefix || 
+           userRoleWithoutPrefix === requiredRole;
   }
 }

@@ -1,0 +1,28 @@
+// Tablo stil özellikleri
+.table {
+  white-space: nowrap;
+  
+  th, td {
+    vertical-align: middle;
+  }
+}
+
+// Form kontrollerinin konumlandırılması
+.form-group {
+  margin-bottom: 1rem;
+}
+
+// Kart gölgesi
+.card {
+  box-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.075);
+}
+
+// Hata ve başarı mesajları için animasyon
+.alert {
+  transition: opacity 0.3s ease-in-out;
+}
+
+// Buttons
+.btn-sm {
+  padding: 0.25rem 0.5rem;
+} 

@@ -1,0 +1,136 @@
+<div class="container">
+  <h2 class="mb-4">Order Management</h2>
+  
+  <div *ngIf="!isAdmin" class="alert alert-danger">
+    <strong>Access Denied!</strong> You need administrator privileges to view this page.
+    <div class="mt-2">You will be redirected to the main page shortly...</div>
+  </div>
+  
+  <div *ngIf="loading" class="text-center my-5">
+    <div class="spinner-border" role="status">
+      <span class="visually-hidden">Loading...</span>
+    </div>
+  </div>
+  
+  <div *ngIf="error" class="alert alert-danger">
+    <strong>Error:</strong> {{ error }}
+  </div>
+
+  <div *ngIf="!loading && !error && orders.length === 0 && isAdmin" class="alert alert-info">
+    No orders found in the system.
+  </div>
+
+  <div class="mb-3">
+    <button class="btn btn-primary" (click)="refreshOrders()" [disabled]="loading">
+      <i class="bi bi-arrow-clockwise me-2"></i>Refresh Orders
+    </button>
+  </div>
+  
+  <div *ngIf="orders.length > 0" class="table-responsive">
+    <table class="table table-striped table-hover">
+      <thead class="table-dark">
+        <tr>
+          <th scope="col">Order ID</th>
+          <th scope="col">Date</th>
+          <th scope="col">Customer</th>
+          <th scope="col">Total Amount</th>
+          <th scope="col">Status</th>
+          <th scope="col">Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        <ng-container *ngFor="let order of orders; let i = index">
+          <tr>
+            <td>#{{ order.id }}</td>
+            <td>{{ order.createdAt | date:'medium' }}</td>
+            <td>{{ order.customerFullName || 'Unknown' }}</td>
+            <td>${{ order.totalPrice ? order.totalPrice.toFixed(2) : '0.00' }}</td>
+            <td>
+              <span class="badge" [ngClass]="getStatusClass(order.status)">
+                {{ order.status }}
+              </span>
+            </td>
+            <td>
+              <button class="btn btn-sm btn-outline-info" (click)="toggleOrderDetails(i)">
+                <i class="bi" [ngClass]="expandedOrderIndex === i ? 'bi-chevron-up' : 'bi-chevron-down'"></i> Details
+              </button>
+            </td>
+          </tr>
+          <!-- Expanded Order Details -->
+          <tr *ngIf="expandedOrderIndex === i">
+            <td colspan="6">
+              <div class="card p-3 bg-light">
+                <h5 class="mb-3">Order Items</h5>
+                <table class="table table-sm">
+                  <thead>
+                    <tr>
+                      <th>Image</th>
+                      <th>Product</th>
+                      <th>Price</th>
+                      <th>Quantity</th>
+                      <th>Seller</th>
+                      <th>Status</th>
+                      <th>Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr *ngFor="let item of order.items">
+                      <td>
+                        <img [src]="item.imageUrl || 'assets/img/no-image.png'" 
+                             alt="{{ item.productName }}" 
+                             class="img-thumbnail product-thumbnail"
+                             style="width: 60px; height: 60px; object-fit: cover;">
+                      </td>
+                      <td>{{ item.productName }}</td>
+                      <td>${{ item.priceAtPurchase ? item.priceAtPurchase.toFixed(2) : '0.00' }}</td>
+                      <td>{{ item.quantity }}</td>
+                      <td>{{ item.sellerName || 'Unknown Seller' }}</td>
+                      <td>
+                        <span class="badge" [ngClass]="getItemStatusClass(item.status)">
+                          {{ item.status }}
+                        </span>
+                      </td>
+                      <td>
+                        <button class="btn btn-sm btn-outline-secondary me-1" 
+                                title="Change Item Status" 
+                                (click)="openChangeItemStatusModal(order, item)"
+                                [disabled]="item.status === orderItemStatus.DELIVERED || 
+                                          item.status === orderItemStatus.CANCELED || 
+                                          item.status === orderItemStatus.CANCELLED_BY_SELLER || 
+                                          item.status === orderItemStatus.CANCELLED_BY_ADMIN || 
+                                          item.status === orderItemStatus.REFUNDED">
+                          Change Status
+                        </button>
+                        <button class="btn btn-sm btn-outline-danger" 
+                                title="Cancel Item" 
+                                (click)="promptCancelOrderItem(item, order.id)" 
+                                [disabled]="item.status === orderItemStatus.DELIVERED || 
+                                            item.status === orderItemStatus.CANCELED || 
+                                            item.status === orderItemStatus.CANCELLED_BY_SELLER || 
+                                            item.status === orderItemStatus.CANCELLED_BY_ADMIN || 
+                                            item.status === orderItemStatus.REFUNDED ||
+                                            item.status === orderItemStatus.SHIPPED">
+                          Cancel Item
+                        </button>
+                      </td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+            </td>
+          </tr>
+        </ng-container>
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<!-- Change Item Status Modal -->
+<app-change-item-status-modal 
+  *ngIf="isChangeStatusModalVisible && selectedItemForStatusChange && selectedOrderForStatusChange"
+  [isVisible]="isChangeStatusModalVisible"
+  [item]="selectedItemForStatusChange"
+  [order]="selectedOrderForStatusChange"
+  (closeModal)="handleCloseChangeStatusModal()"
+  (saveStatus)="handleSaveItemStatus($event)">
+</app-change-item-status-modal>

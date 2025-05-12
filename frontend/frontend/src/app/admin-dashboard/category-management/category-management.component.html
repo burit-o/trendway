@@ -1,0 +1,80 @@
+<div class="container-fluid">
+  <div class="row">
+    <div class="col-12 mb-4">
+      <div class="card">
+        <div class="card-header bg-primary text-white">
+          <h5 class="mb-0">Category Management</h5>
+        </div>
+        <div class="card-body">
+          <div class="alert alert-success" *ngIf="success">{{ success }}</div>
+          <div class="alert alert-danger" *ngIf="error">{{ error }}</div>
+          
+          <!-- Kategori Ekleme Formu -->
+          <form [formGroup]="categoryForm" (ngSubmit)="addCategory()" class="mb-4">
+            <div class="row g-3 align-items-center">
+              <div class="col-md-4">
+                <div class="form-group">
+                  <label for="categoryName" class="form-label">Category Name</label>
+                  <input 
+                    type="text" 
+                    id="categoryName" 
+                    formControlName="name" 
+                    class="form-control" 
+                    [ngClass]="{'is-invalid': categoryForm.get('name')?.invalid && (categoryForm.get('name')?.dirty || categoryForm.get('name')?.touched)}" 
+                    placeholder="Enter category name"
+                  >
+                  <div class="invalid-feedback" *ngIf="categoryForm.get('name')?.errors?.['required']">
+                    Category name is required.
+                  </div>
+                  <div class="invalid-feedback" *ngIf="categoryForm.get('name')?.errors?.['minlength']">
+                    Category name must be at least 2 characters long.
+                  </div>
+                </div>
+              </div>
+              <div class="col-md-2 d-flex align-items-end">
+                <button type="submit" class="btn btn-primary" [disabled]="categoryForm.invalid || loading">
+                  <span *ngIf="loading" class="spinner-border spinner-border-sm me-1" role="status" aria-hidden="true"></span>
+                  Add Category
+                </button>
+              </div>
+            </div>
+          </form>
+          
+          <!-- Kategori Listesi -->
+          <div class="table-responsive">
+            <table class="table table-striped table-hover table-bordered">
+              <thead>
+                <tr>
+                  <th>ID</th>
+                  <th>Name</th>
+                  <th>Actions</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr *ngIf="loading">
+                  <td colspan="3" class="text-center">
+                    <div class="spinner-border text-primary" role="status">
+                      <span class="visually-hidden">Loading...</span>
+                    </div>
+                  </td>
+                </tr>
+                <tr *ngIf="!loading && categories.length === 0">
+                  <td colspan="3" class="text-center">No categories found.</td>
+                </tr>
+                <tr *ngFor="let category of categories">
+                  <td>{{ category.id }}</td>
+                  <td>{{ category.name }}</td>
+                  <td>
+                    <button class="btn btn-danger btn-sm" (click)="deleteCategory(category.id)">
+                      <i class="bi bi-trash me-1"></i>Delete
+                    </button>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div> 

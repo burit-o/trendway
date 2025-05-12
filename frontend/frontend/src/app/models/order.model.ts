@@ -37,12 +37,17 @@ export interface OrderItem {
   refundRequestedAt?: Date;
   refundProcessedAt?: Date;
   order?: any; // Tip çakışmalarını önlemek için any olarak belirtildi
+  // Satıcı bilgileri
+  sellerId?: number;
+  sellerName?: string;
 }
 
 export interface Order {
   id: number;
   orderTrackingNumber?: string;
   userId: number;
+  customerId?: number;
+  customerFullName?: string; // DTO'dan gelecek müşteri adı
   createdAt: string;
   status: string;
   totalPrice: number;
@@ -51,4 +56,6 @@ export interface Order {
   billingAddress?: Address;
   paymentMethod?: string;
   notes?: string;
+  address?: Address; // DTO'dan gelecek adres bilgisi
+  paymentIntentId?: string;
 } 

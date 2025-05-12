@@ -21,6 +21,16 @@ public class CategoryService {
         if (categoryRepository.existsByName(category.getName())) {
             throw new RuntimeException("Category already exists");
         }
+        
+        // ID 0 ise null olarak ayarla - Hibernate'in yeni kayıt oluşturmasını sağla
+        if (category.getId() != null && category.getId() == 0) {
+            category.setId(null);
+        }
+        
         return categoryRepository.save(category);
+    }
+    
+    public void deleteCategory(Long id) {
+        categoryRepository.deleteById(id);
     }
 }
