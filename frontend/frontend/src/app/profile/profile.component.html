@@ -260,7 +260,7 @@
                       
                       <div class="d-flex">
                         <!-- İade Talebi Butonu (Sadece teslim edilmiş ve henüz iade talebi olmayan ürünler için) -->
-                        <button *ngIf="item.status === 'DELIVERED' && !item.refundStatus" 
+                        <button *ngIf="!item.refundStatus" 
                                 class="btn btn-sm btn-outline-warning" 
                                 (click)="requestRefund(order, item)">
                           Request Refund

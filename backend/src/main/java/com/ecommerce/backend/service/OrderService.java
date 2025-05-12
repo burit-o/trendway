@@ -590,11 +590,6 @@ public class OrderService {
             throw new SecurityException("The order item does not belong to the specified order.");
         }
         
-        // Ürünün teslim edilmiş olup olmadığını kontrol et
-        if (orderItem.getStatus() != OrderItemStatus.DELIVERED) {
-            throw new IllegalStateException("Only delivered items can be refunded.");
-        }
-        
         // Daha önce iade talebi oluşturulup oluşturulmadığını kontrol et
         if (orderItem.getRefundStatus() != null) {
             throw new IllegalStateException("A refund request already exists for this item.");
