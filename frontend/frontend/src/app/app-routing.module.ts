@@ -11,6 +11,7 @@ import { SellerDashboardComponent } from './seller-dashboard/seller-dashboard.co
 import { RoleGuard } from './auth/guards/role.guard';
 import { SellerProductsComponent } from './seller-dashboard/seller-products/seller-products.component';
 import { SellerOrdersComponent } from './seller-dashboard/seller-orders/seller-orders.component';
+import { RefundRequestsComponent } from './refund-requests/refund-requests.component';
 
 const routes: Routes = [
   {
@@ -59,7 +60,14 @@ const routes: Routes = [
       { path: '', redirectTo: 'products', pathMatch: 'full' },
       { path: 'products', component: SellerProductsComponent },
       { path: 'orders', component: SellerOrdersComponent },
+      { path: 'refund-requests', component: RefundRequestsComponent }
     ]
+  },
+  {
+    path: 'refund-requests',
+    component: RefundRequestsComponent,
+    canActivate: [AuthGuard, RoleGuard],
+    data: { expectedRole: 'SELLER' }
   },
   {
     path: '',

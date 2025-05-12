@@ -3,7 +3,7 @@ import { AuthService } from '../auth/services/auth.service';
 import { User } from '../auth/models/auth.model';
 import { Address } from '../models/address.model';
 import { AddressService } from '../services/address.service';
-import { Order } from '../models/order.model';
+import { Order, OrderItem } from '../models/order.model';
 import { OrderService } from '../services/order.service';
 import { CommonModule } from '@angular/common';
 import { ReactiveFormsModule, FormBuilder, FormGroup, Validators } from '@angular/forms';
@@ -12,6 +12,7 @@ import { Category } from '../models/category.model';
 import { CategoryService } from '../services/category.service';
 import { Cart } from '../models/cart.model';
 import { CartService } from '../services/cart.service';
+import { RefundStatus } from '../models/order-item.model';
 
 @Component({
   selector: 'app-profile',
@@ -54,6 +55,8 @@ export class ProfileComponent implements OnInit {
   categoryError: string | null = null;
   cartItemCount = 0;
   cartError: string | null = null;
+
+  isUpdatingRefund = false;
 
   constructor(
     private authService: AuthService, 
@@ -312,14 +315,45 @@ export class ProfileComponent implements OnInit {
 
   get cpd() { return this.changePasswordForm.controls; }
 
-  reorder(order: Order): void {
-    console.log('Reorder:', order);
-    // TODO: Implement reorder functionality
-  }
+  requestRefund(order: Order, item: OrderItem): void {
+    if (!item || !order) {
+      this.showErrorAlert('Invalid order item');
+      return;
+    }
+    
+    this.isUpdatingRefund = true;
+    const reason = prompt('Please enter a reason for the refund request:', '');
+    if (reason === null) { // Kullanıcı iptal ettiğinde
+      this.isUpdatingRefund = false;
+      return;
+    }
+    
+    if (!reason.trim()) {
+      this.showErrorAlert('Refund reason cannot be empty');
+      this.isUpdatingRefund = false;
+      return;
+    }
 
-  viewInvoice(order: Order): void {
-    console.log('View Invoice for:', order);
-    // TODO: Implement view invoice functionality
+    this.orderService.requestRefundForOrderItem(order.id, item.id!, reason).subscribe({
+      next: (updatedItem: OrderItem) => {
+        // İlgili sipariş ve ürünü bul
+        const orderIndex = this.orders.findIndex(o => o.id === order.id);
+        const itemIndex = this.orders[orderIndex].items.findIndex(i => i.id === item.id);
+        
+        // Ürünü güncelle
+        this.orders[orderIndex].items[itemIndex].refundStatus = updatedItem.refundStatus;
+        this.orders[orderIndex].items[itemIndex].refundReason = updatedItem.refundReason;
+        this.orders[orderIndex].items[itemIndex].refundRequestedAt = updatedItem.refundRequestedAt;
+        
+        this.isUpdatingRefund = false;
+        this.showSuccessAlert('Refund request submitted successfully');
+      },
+      error: (err: any) => {
+        console.error('Error requesting refund:', err);
+        this.isUpdatingRefund = false;
+        this.showErrorAlert(`Failed to submit refund request: ${err.error || 'Unknown error occurred'}`);
+      }
+    });
   }
 
   loadCategories(): void {
@@ -364,5 +398,13 @@ export class ProfileComponent implements OnInit {
     this.cartItemCount = 0;
     this.currentUser = null;
     this.router.navigate(['/auth/login']);
+  }
+
+  showErrorAlert(message: string): void {
+    alert(message);
+  }
+
+  showSuccessAlert(message: string): void {
+    alert(message);
   }
 }

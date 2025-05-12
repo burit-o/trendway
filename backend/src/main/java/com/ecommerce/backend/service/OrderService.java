@@ -397,4 +397,108 @@ public class OrderService {
         return orderRepository.findOrdersBySellerId(sellerId);
     }
 
+    // Müşterinin iade talebi oluşturması
+    @Transactional
+    public OrderItem requestRefund(Long orderId, Long orderItemId, String reason, Long customerId) {
+        Order order = orderRepository.findById(orderId)
+                .orElseThrow(() -> new RuntimeException("Order not found with ID: " + orderId));
+        
+        // Siparişin müşteriye ait olup olmadığını kontrol et
+        if (!order.getCustomer().getId().equals(customerId)) {
+            throw new SecurityException("You are not authorized to request refund for this order.");
+        }
+        
+        OrderItem orderItem = orderItemRepository.findById(orderItemId)
+                .orElseThrow(() -> new RuntimeException("Order item not found with ID: " + orderItemId));
+        
+        // Sipariş kalemine ait siparişin müşteri tarafından talep edilen sipariş olup olmadığını kontrol et
+        if (!orderItem.getOrder().getId().equals(orderId)) {
+            throw new SecurityException("The order item does not belong to the specified order.");
+        }
+        
+        // Ürünün teslim edilmiş olup olmadığını kontrol et
+        if (orderItem.getStatus() != OrderItemStatus.DELIVERED) {
+            throw new IllegalStateException("Only delivered items can be refunded.");
+        }
+        
+        // Daha önce iade talebi oluşturulup oluşturulmadığını kontrol et
+        if (orderItem.getRefundStatus() != null) {
+            throw new IllegalStateException("A refund request already exists for this item.");
+        }
+        
+        // İade talebini kaydet
+        orderItem.setRefundStatus(RefundStatus.PENDING_APPROVAL);
+        orderItem.setRefundReason(reason);
+        orderItem.setRefundRequestedAt(LocalDateTime.now());
+        
+        return orderItemRepository.save(orderItem);
+    }
+    
+    // Satıcının bekleyen iade taleplerini listelemesi
+    public List<OrderItem> getRefundRequestsBySeller(Long sellerId) {
+        User seller = userRepository.findById(sellerId)
+                .orElseThrow(() -> new RuntimeException("Seller not found with ID: " + sellerId));
+        
+        // Satıcıya ait ürünlerden iade talebi olanları bul
+        // Bu özel repository sorgusu oluşturulmalı
+        return orderItemRepository.findByProductSellerIdAndRefundStatus(
+                sellerId, RefundStatus.PENDING_APPROVAL);
+    }
+    
+    // Satıcının iade talebini onaylaması
+    @Transactional
+    public OrderItem approveRefundRequest(Long orderItemId, Long sellerId) {
+        OrderItem orderItem = orderItemRepository.findById(orderItemId)
+                .orElseThrow(() -> new RuntimeException("Order item not found with ID: " + orderItemId));
+        
+        // Ürünün satıcıya ait olup olmadığını kontrol et
+        if (!orderItem.getProduct().getSeller().getId().equals(sellerId)) {
+            throw new SecurityException("You are not authorized to approve this refund request.");
+        }
+        
+        // İade talebinin durumunu kontrol et
+        if (orderItem.getRefundStatus() != RefundStatus.PENDING_APPROVAL) {
+            throw new IllegalStateException("This refund request is not in pending state.");
+        }
+        
+        // İade talebini onayla
+        orderItem.setRefundStatus(RefundStatus.APPROVED);
+        orderItem.setRefundProcessedAt(LocalDateTime.now());
+        orderItem.setStatus(OrderItemStatus.EXCHANGED); // veya iade durumuna özel bir durum 
+        
+        Order order = orderItem.getOrder();
+        
+        // Stripe ile ödeme iadesi işlemlerini yapabilirsiniz
+        // Örnek: refund(order.getPaymentIntentId(), orderItem.getPriceAtPurchase() * orderItem.getQuantity());
+        
+        // Sipariş durumunu güncelle
+        updateOverallOrderStatus(order);
+        
+        return orderItemRepository.save(orderItem);
+    }
+    
+    // Satıcının iade talebini reddetmesi
+    @Transactional
+    public OrderItem rejectRefundRequest(Long orderItemId, String rejectionReason, Long sellerId) {
+        OrderItem orderItem = orderItemRepository.findById(orderItemId)
+                .orElseThrow(() -> new RuntimeException("Order item not found with ID: " + orderItemId));
+        
+        // Ürünün satıcıya ait olup olmadığını kontrol et
+        if (!orderItem.getProduct().getSeller().getId().equals(sellerId)) {
+            throw new SecurityException("You are not authorized to reject this refund request.");
+        }
+        
+        // İade talebinin durumunu kontrol et
+        if (orderItem.getRefundStatus() != RefundStatus.PENDING_APPROVAL) {
+            throw new IllegalStateException("This refund request is not in pending state.");
+        }
+        
+        // İade talebini reddet
+        orderItem.setRefundStatus(RefundStatus.REJECTED);
+        orderItem.setRefundProcessedAt(LocalDateTime.now());
+        orderItem.setRefundReason(orderItem.getRefundReason() + " | REJECTED: " + rejectionReason);
+        
+        return orderItemRepository.save(orderItem);
+    }
+
 }

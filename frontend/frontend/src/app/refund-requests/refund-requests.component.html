@@ -1,0 +1,134 @@
+<div class="container-fluid py-3">
+  <!-- Başlık ve açıklama -->
+  <div class="row mb-4">
+    <div class="col-12">
+      <h2 class="mb-2">Refund Requests</h2>
+      <p class="text-muted">Review and manage customer refund requests for your products.</p>
+    </div>
+  </div>
+
+  <!-- Hata mesajı -->
+  <div *ngIf="error" class="row mb-3">
+    <div class="col-12">
+      <div class="alert alert-danger">
+        {{ error }}
+      </div>
+    </div>
+  </div>
+
+  <!-- Başarı mesajı -->
+  <div *ngIf="successMessage" class="row mb-3">
+    <div class="col-12">
+      <div class="alert alert-success">
+        {{ successMessage }}
+      </div>
+    </div>
+  </div>
+
+  <!-- Yükleme göstergesi -->
+  <div *ngIf="isLoading" class="row mb-3">
+    <div class="col-12 text-center">
+      <div class="spinner-border" role="status">
+        <span class="visually-hidden">Loading...</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- İade talepleri tablosu -->
+  <div *ngIf="!isLoading && refundRequests.length > 0" class="row">
+    <div class="col-12">
+      <div class="card mb-4">
+        <div class="card-header bg-light">
+          <h5 class="mb-0">Pending Refund Requests</h5>
+        </div>
+        <div class="table-responsive">
+          <table class="table table-hover">
+            <thead>
+              <tr>
+                <th>Product</th>
+                <th>Order ID</th>
+                <th>Customer</th>
+                <th>Quantity</th>
+                <th>Amount</th>
+                <th>Request Date</th>
+                <th>Reason</th>
+                <th>Actions</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr *ngFor="let item of refundRequests">
+                <td>
+                  <div class="d-flex align-items-center">
+                    <img *ngIf="item.imageUrl" [src]="item.imageUrl" class="me-2" style="width: 50px; height: 50px; object-fit: cover;" [alt]="item.productName">
+                    <span>{{ item.productName }}</span>
+                  </div>
+                </td>
+                <td>{{ item.order?.id }}</td>
+                <td>{{ item.order?.customer?.firstName }} {{ item.order?.customer?.lastName }}</td>
+                <td>{{ item.quantity }}</td>
+                <td>{{ item.quantity * item.priceAtPurchase | currency }}</td>
+                <td>{{ formatDate(item.refundRequestedAt) }}</td>
+                <td>{{ item.refundReason }}</td>
+                <td>
+                  <div class="btn-group" role="group">
+                    <button class="btn btn-sm btn-success" (click)="approveRefund(item.id)">
+                      <i class="bi bi-check-lg"></i> Approve
+                    </button>
+                    <button class="btn btn-sm btn-danger" (click)="showRejectionDialog(item.id)">
+                      <i class="bi bi-x-lg"></i> Reject
+                    </button>
+                  </div>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Veri yoksa göster -->
+  <div *ngIf="!isLoading && refundRequests.length === 0" class="row">
+    <div class="col-12">
+      <div class="alert alert-info">
+        There are no pending refund requests at this time.
+      </div>
+    </div>
+  </div>
+
+  <!-- Reddetme Diyaloğu (Modal) -->
+  <div *ngIf="isRejecting" class="modal modal-rejection fade show d-block" tabindex="-1" role="dialog">
+    <div class="modal-dialog" role="document">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title">Reject Refund Request</h5>
+          <button type="button" class="btn-close" (click)="cancelRejection()"></button>
+        </div>
+        <div class="modal-body">
+          <div class="form-group">
+            <label for="rejectionReason">Rejection Reason</label>
+            <textarea 
+              class="form-control" 
+              id="rejectionReason" 
+              rows="3" 
+              [(ngModel)]="rejectionReason" 
+              placeholder="Please provide a reason for rejecting this refund request..."
+            ></textarea>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" (click)="cancelRejection()">Cancel</button>
+          <button 
+            type="button" 
+            class="btn btn-danger" 
+            [disabled]="!rejectionReason.trim()" 
+            (click)="rejectRefund()"
+          >
+            Reject Refund
+          </button>
+        </div>
+      </div>
+    </div>
+    <div class="modal-backdrop fade show"></div>
+  </div>
+</div>

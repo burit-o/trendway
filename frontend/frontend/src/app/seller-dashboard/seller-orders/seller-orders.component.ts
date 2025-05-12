@@ -5,11 +5,12 @@ import { Order, OrderItem } from '../../models/order.model';
 import { OrderItemStatus } from '../../models/order-item.model';
 import { OrderService } from '../../services/order.service';
 import { AuthService } from '../../auth/services/auth.service'; // Seller ID için
+import { ChangeItemStatusModalComponent, ORDER_ITEM_STATUSES } from '../change-item-status-modal/change-item-status-modal.component';
 
 @Component({
   selector: 'app-seller-orders',
   standalone: true,
-  imports: [CommonModule, RouterModule, DatePipe],
+  imports: [CommonModule, RouterModule, DatePipe, ChangeItemStatusModalComponent],
   templateUrl: './seller-orders.component.html',
   styleUrls: ['./seller-orders.component.scss']
 })
@@ -22,6 +23,12 @@ export class SellerOrdersComponent implements OnInit {
 
   // OrderItemStatus enum'ını template'te kullanmak için ekle
   public orderItemStatus = OrderItemStatus;
+  public readonly allowedStatusesForChange = ORDER_ITEM_STATUSES; // Modal'ın kullanacağı statüleri de public yapalım
+
+  // Modal yönetimi için
+  isChangeStatusModalVisible = false;
+  selectedOrderForStatusChange: Order | null = null;
+  selectedItemForStatusChange: OrderItem | null = null;
 
   constructor(
     private orderService: OrderService,
@@ -67,9 +74,48 @@ export class SellerOrdersComponent implements OnInit {
   }
 
   openChangeItemStatusModal(order: Order, item: OrderItem): void {
-    console.log("Change status for item:", item, "in order:", order);
-    // TODO: Durum değiştirme modalını açma mantığı eklenecek
-    // Bu modal, OrderItemStatus enum'undaki değerleri listelemeli
+    // İptal edilmiş veya teslim edilmiş ürünler için modal açılmamalı (HTML'de zaten disabled)
+    // Ama yine de bir kontrol ekleyebiliriz.
+    if (item.status === OrderItemStatus.DELIVERED || 
+        item.status === OrderItemStatus.CANCELED || 
+        item.status === OrderItemStatus.CANCELLED_BY_SELLER) {
+      console.warn('Cannot change status for item in status:', item.status);
+      return;
+    }
+    this.selectedOrderForStatusChange = order;
+    this.selectedItemForStatusChange = item;
+    this.isChangeStatusModalVisible = true;
+  }
+
+  handleCloseChangeStatusModal(): void {
+    this.isChangeStatusModalVisible = false;
+    this.selectedOrderForStatusChange = null;
+    this.selectedItemForStatusChange = null;
+  }
+
+  handleSaveItemStatus(event: { itemId: number, newStatus: string }): void {
+    if (!event || event.itemId === undefined || !event.newStatus) {
+      console.error('Invalid event data for saving status:', event);
+      this.error = 'Failed to update status: Invalid data.';
+      return;
+    }
+    this.isLoading = true;
+    this.orderService.updateOrderItemStatus(event.itemId, event.newStatus).subscribe({
+      next: () => {
+        this.isLoading = false;
+        this.handleCloseChangeStatusModal();
+        this.loadSellerOrders(); // Listeyi yenile
+         // Başarı mesajı (örn: toaster)
+        console.log(`Item ${event.itemId} status updated to ${event.newStatus}`);
+      },
+      error: (err) => {
+        this.isLoading = false;
+        console.error('Error updating item status:', err);
+        this.error = `Failed to update item status: ${err.error?.message || err.message}`;
+        // Hata mesajını bir süre sonra temizle
+        setTimeout(() => this.error = null, 5000);
+      }
+    });
   }
 
   promptCancelOrderItem(item: OrderItem, orderId: number): void {
@@ -86,7 +132,9 @@ export class SellerOrdersComponent implements OnInit {
 
     if (confirmCancel) {
       this.isLoading = true; 
-      this.orderService.cancelOrderItemBySeller(item.id).subscribe({
+      // Item ID'nin varlığından emin olalım
+      const itemId = item.id;
+      this.orderService.cancelOrderItemBySeller(itemId).subscribe({
         next: (updatedItem) => {
           console.log('Item cancelled successfully by seller:', updatedItem);
           this.isLoading = false;

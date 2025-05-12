@@ -2,8 +2,11 @@ package com.ecommerce.backend.dto;
 
 import com.ecommerce.backend.model.OrderItem;
 import com.ecommerce.backend.model.OrderItemStatus;
+import com.ecommerce.backend.model.RefundStatus;
 import lombok.Builder;
 import lombok.Data;
+
+import java.time.LocalDateTime;
 
 @Data
 @Builder
@@ -15,6 +18,12 @@ public class OrderItemDto {
     private Integer quantity;
     private Double priceAtPurchase;
     private String status;
+    
+    // İade ile ilgili alanlar
+    private RefundStatus refundStatus;
+    private String refundReason;
+    private LocalDateTime refundRequestedAt;
+    private LocalDateTime refundProcessedAt;
 
     public static OrderItemDto fromEntity(OrderItem item) {
         String imageUrl = null;
@@ -30,6 +39,10 @@ public class OrderItemDto {
                 .quantity(item.getQuantity())
                 .priceAtPurchase(item.getPriceAtPurchase())
                 .status(item.getStatus() != null ? item.getStatus().name() : null)
+                .refundStatus(item.getRefundStatus())
+                .refundReason(item.getRefundReason())
+                .refundRequestedAt(item.getRefundRequestedAt())
+                .refundProcessedAt(item.getRefundProcessedAt())
                 .build();
     }
 } 

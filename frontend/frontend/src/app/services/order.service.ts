@@ -49,13 +49,46 @@ export class OrderService {
       params: {
         orderItemId: orderItemId.toString(),
         status: status
-      }
+      },
+      responseType: 'text' // JSON ayrıştırma hatasını önlemek için eklendi
     });
   }
 
   // Satıcının bir sipariş kalemini iptal etmesi
   cancelOrderItemBySeller(orderItemId: number): Observable<OrderItem> { // Backend OrderItem döndürüyor -> Frontend OrderItem modeli ile değiştirildi
     return this.http.put<OrderItem>(`${this.apiUrl}/item/${orderItemId}/cancel-by-seller`, {}); // Frontend OrderItem modeli ile değiştirildi
+  }
+
+  // Müşterinin bir sipariş için iade talebinde bulunması (updated)
+  requestRefundForOrderItem(orderId: number, orderItemId: number, reason: string): Observable<OrderItem> {
+    // Backend endpoint'i POST /api/orders/{orderId}/request-refund
+    // Sipariş kalemi (orderItem) için iade talebini gönderir
+    return this.http.post<OrderItem>(`${this.apiUrl}/${orderId}/request-refund`, {
+      orderItemId: orderItemId,
+      reason: reason
+    });
+  }
+
+  // Compatibility için eklendi - aynı işlevi görür
+  requestRefund(orderId: number, orderItemId: number, reason: string): Observable<OrderItem> {
+    return this.requestRefundForOrderItem(orderId, orderItemId, reason);
+  }
+  
+  // Satıcının bekleyen iade taleplerini getir
+  getRefundRequestsBySeller(): Observable<OrderItem[]> {
+    return this.http.get<OrderItem[]>(`${this.apiUrl}/refund-requests/by-seller`);
+  }
+  
+  // Satıcının iade talebini onaylaması
+  approveRefundRequest(orderItemId: number): Observable<OrderItem> {
+    return this.http.put<OrderItem>(`${this.apiUrl}/refund-requests/${orderItemId}/approve`, {});
+  }
+  
+  // Satıcının iade talebini reddetmesi
+  rejectRefundRequest(orderItemId: number, rejectionReason: string): Observable<OrderItem> {
+    return this.http.put<OrderItem>(`${this.apiUrl}/refund-requests/${orderItemId}/reject`, null, {
+      params: { rejectionReason }
+    });
   }
   
   // TODO: Gelecekte sipariş oluşturma, iptal etme gibi fonksiyonlar eklenebilir.

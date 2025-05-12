@@ -248,10 +248,24 @@
                     <li *ngFor="let item of order.items" class="list-group-item d-flex justify-content-between align-items-center">
                       <div>
                         <img *ngIf="item.imageUrl" [src]="item.imageUrl" [alt]="item.productName" class="me-2" style="width: 50px; height: 50px; object-fit: cover;">
-                        <img *ngIf="!item.imageUrl" src="assets/placeholder.jpg" [alt]="item.productName" class="me-2" style="width: 50px; height: 50px; object-fit: cover;"> 
-                        {{ item.productName }} (x{{ item.quantity }})
+                        <span>{{ item.quantity }}x {{ item.productName }} - {{ item.priceAtPurchase | currency }}</span>
+                        <span class="badge ms-2" [ngClass]="getOrderStatusClass(item.status)">{{ item.status }}</span>
+                        
+                        <!-- İade Durumu Gösterimi (Talebi varsa) -->
+                        <span *ngIf="item.refundStatus === 'PENDING_APPROVAL'" class="badge bg-warning text-dark ms-2">Refund Pending</span>
+                        <span *ngIf="item.refundStatus === 'APPROVED'" class="badge bg-success ms-2">Refund Approved</span>
+                        <span *ngIf="item.refundStatus === 'REJECTED'" class="badge bg-danger ms-2">Refund Rejected</span>
+                        <span *ngIf="item.refundStatus === 'COMPLETED'" class="badge bg-info ms-2">Refund Completed</span>
                       </div>
-                      <span>{{ (item.priceAtPurchase * item.quantity) | currency }}</span>
+                      
+                      <div class="d-flex">
+                        <!-- İade Talebi Butonu (Sadece teslim edilmiş ve henüz iade talebi olmayan ürünler için) -->
+                        <button *ngIf="item.status === 'DELIVERED' && !item.refundStatus" 
+                                class="btn btn-sm btn-outline-warning" 
+                                (click)="requestRefund(order, item)">
+                          Request Refund
+                        </button>
+                      </div>
                     </li>
                   </ul>
 
@@ -262,9 +276,6 @@
                     {{ order.shippingAddress.country }}
                     <span *ngIf="order.shippingAddress.contactPhone"><br>Phone: {{ order.shippingAddress.contactPhone }}</span>
                   </address>
-                  
-                  <button class="btn btn-sm btn-outline-primary" (click)="reorder(order)" disabled>Reorder</button> <!-- TODO: Reorder fonksiyonu -->
-                  <button class="btn btn-sm btn-outline-secondary ms-2" (click)="viewInvoice(order)" disabled>View Invoice</button> <!-- TODO: Fatura görüntüleme -->
                 </div>
               </div>
             </div>
