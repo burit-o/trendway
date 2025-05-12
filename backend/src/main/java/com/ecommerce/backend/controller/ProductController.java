@@ -13,6 +13,7 @@ import java.util.List;
 @RestController
 @RequestMapping("/api/products")
 @RequiredArgsConstructor
+@CrossOrigin(origins = "http://localhost:4200")
 public class ProductController {
 
     private final ProductService productService;
@@ -33,14 +34,13 @@ public class ProductController {
         return ResponseEntity.ok(products);
     }
 
-    @PostMapping("/add/{sellerId}/{categoryId}")
+    @PostMapping("/add/{sellerId}")
     @PreAuthorize("hasRole('SELLER')")
     public ResponseEntity<Product> addProduct(
             @RequestBody Product product,
-            @PathVariable Long sellerId,
-            @PathVariable Long categoryId
+            @PathVariable Long sellerId
     ) {
-        return ResponseEntity.ok(productService.addProduct(product, sellerId, categoryId));
+        return ResponseEntity.ok(productService.addProduct(product, sellerId));
     }
 
     @PutMapping("/deactivate/{id}")
@@ -84,7 +84,7 @@ public class ProductController {
     }
 
     @PutMapping("/{productId}")
-    @PreAuthorize("hasRole('SELLER')")
+    @PreAuthorize("hasAnyRole('SELLER', 'ADMIN')")
     public ResponseEntity<Product> updateProductDetails(
             @PathVariable Long productId,
             @RequestBody Product productDetails,
@@ -92,5 +92,12 @@ public class ProductController {
     ) {
         Product updatedProduct = productService.updateProductDetails(productId, productDetails, principal.getName());
         return ResponseEntity.ok(updatedProduct);
+    }
+
+    @GetMapping("/not-deleted")
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<List<Product>> getAllNotDeletedProducts() {
+        List<Product> products = productService.getAllNotDeletedProducts();
+        return ResponseEntity.ok(products);
     }
 }

@@ -67,11 +67,12 @@ public class JwtService {
 
     public String generateToken(User user) {
         Map<String, Object> claims = new HashMap<>();
-        String role = "ROLE_" + user.getRole().name();
+        String roleName = user.getRole().name();
+        String roleWithPrefix = "ROLE_" + roleName;
     
-        claims.put("role", role);  // Optional – loglama vs. için
+        claims.put("role", roleWithPrefix);  // ÖNEMLİ: ROLE_ öneki eklenmeli
         claims.put("id", user.getId());
-        claims.put("authorities", List.of(role)); // 💥 ASIL GEREKEN BU!
+        claims.put("authorities", List.of(roleWithPrefix)); // AYNI PREFIX AUTHORITIES'E DE EKLENMELİ
     
         return Jwts.builder()
                 .setClaims(claims)

@@ -40,4 +40,7 @@ public class Order {
     private Address address;
     
     private String paymentIntentId;
+
+    @Column(name = "stripe_checkout_session_id")
+    private String stripeCheckoutSessionId;
 }

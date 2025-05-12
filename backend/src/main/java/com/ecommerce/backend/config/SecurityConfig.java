@@ -18,6 +18,8 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 import org.springframework.web.cors.CorsConfiguration;
+import org.springframework.web.cors.CorsConfigurationSource;
+import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 import java.util.Arrays;
 
 @Configuration
@@ -32,23 +34,16 @@ public class SecurityConfig {
     public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
         return http
                 .csrf(csrf -> csrf.disable())
-                .cors(cors -> cors.configurationSource(request -> {
-                    CorsConfiguration config = new CorsConfiguration();
-                    config.setAllowedOrigins(Arrays.asList("http://localhost:4200"));
-                    config.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "DELETE", "OPTIONS"));
-                    config.setAllowedHeaders(Arrays.asList("*"));
-                    config.setAllowCredentials(true);
-                    return config;
-                }))
-                .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))                .authorizeHttpRequests(auth -> auth
+                .cors(cors -> cors.configurationSource(corsConfigurationSource()))
+                .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
+                .authorizeHttpRequests(auth -> auth
                         .requestMatchers("/api/auth/**").permitAll()
                         .requestMatchers("/api/products/public/**").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/products/{id}").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/reviews/product/{productId}").permitAll()
-                        .requestMatchers("/api/categories/public/**").permitAll()
+                        .requestMatchers("/api/categories/**").permitAll()
                         .requestMatchers("/api/payment/webhook").permitAll()
-                        .requestMatchers("/api/categories/add").hasRole("ADMIN")
-                        .requestMatchers("/api/categories/delete/**").hasRole("ADMIN")
+                        .requestMatchers("/api/admin/**").hasRole("ADMIN")
                         .requestMatchers("/api/cart/**").hasRole("CUSTOMER")
                         .requestMatchers("/api/user/update-address").hasRole("CUSTOMER")
                         .requestMatchers("/api/orders/refund").hasRole("ADMIN")
@@ -57,7 +52,12 @@ public class SecurityConfig {
                         .requestMatchers("/api/orders/approve-exchange").hasRole("SELLER")
                         .requestMatchers("/api/orders/from-cart").hasRole("CUSTOMER")
                         .requestMatchers("/api/orders/request-exchange").hasRole("CUSTOMER")
-                        .requestMatchers("/api/orders/by-customer").hasRole("CUSTOMER")
+                        .requestMatchers(HttpMethod.POST, "/api/orders/{orderId}/request-refund").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/api/orders/by-customer").hasAnyRole("CUSTOMER", "USER")
+                        .requestMatchers(HttpMethod.GET, "/api/orders/seller").hasRole("SELLER")
+                        .requestMatchers(HttpMethod.GET, "/api/orders/refund-requests/by-seller").hasRole("SELLER")
+                        .requestMatchers(HttpMethod.PUT, "/api/orders/item/{orderItemId}/cancel-by-seller").hasRole("SELLER")
+                        .requestMatchers(HttpMethod.PUT, "/api/orders/update-item-status").hasAnyRole("ADMIN", "SELLER")
                         .requestMatchers("/api/orders/**").authenticated()
                         .anyRequest().authenticated()
                 )
@@ -66,6 +66,20 @@ public class SecurityConfig {
                 .build();
     }
     
+    @Bean
+    public CorsConfigurationSource corsConfigurationSource() {
+        CorsConfiguration configuration = new CorsConfiguration();
+        configuration.setAllowedOrigins(Arrays.asList("http://localhost:4200"));
+        configuration.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "DELETE", "OPTIONS"));
+        configuration.setAllowedHeaders(Arrays.asList("Authorization", "Content-Type", "X-Requested-With", "Accept"));
+        configuration.setExposedHeaders(Arrays.asList("Authorization"));
+        configuration.setAllowCredentials(true);
+        configuration.setMaxAge(3600L);
+        
+        UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
+        source.registerCorsConfiguration("/**", configuration);
+        return source;
+    }
 
     @Bean
     public AuthenticationProvider authenticationProvider() {

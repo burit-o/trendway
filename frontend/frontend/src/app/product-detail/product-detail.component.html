@@ -162,6 +162,16 @@
         <!-- TODO: Yorum silme/düzenleme (admin veya kendi yorumuysa) eklenebilir -->
       </div>
     </div>
+    
+    <!-- Satıcı Bilgisi -->
+    <div *ngIf="product && product.seller && !isLoading && !error" class="mt-4 pt-3 border-top">
+      <h5>Seller Information</h5>
+      <p>
+        <i class="bi bi-person-fill me-2"></i>
+        <strong>{{ product.seller.fullName }}</strong>
+      </p>
+      <!-- İsteğe bağlı olarak satıcının diğer bilgileri veya iletişim butonu eklenebilir -->
+    </div>
   </div>
 
 </div>

@@ -129,6 +129,32 @@ public class UserController {
         return ResponseEntity.ok("Seller request approved and role updated.");
     }
 
+    @PutMapping("/request-seller-status")
+    @PreAuthorize("hasRole('CUSTOMER')")
+    public ResponseEntity<String> requestSellerStatus(Principal principal) {
+        String email = principal.getName();
+        User user = userRepository.findByEmail(email)
+                .orElseThrow(() -> new RuntimeException("User not found"));
+
+        if (user.getRole() == Role.SELLER) {
+            return ResponseEntity.badRequest().body("User is already a seller.");
+        }
+        if (user.getRole() == Role.ADMIN) {
+             return ResponseEntity.badRequest().body("Admin cannot request seller status.");
+        }
+        if (user.isBanned()) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).body("Banned users cannot request seller status.");
+        }
+        if (user.isSellerRequested()) {
+            return ResponseEntity.ok("Seller request is already pending.");
+        }
+
+        user.setSellerRequested(true);
+        userRepository.save(user);
+
+        return ResponseEntity.ok("Seller status request submitted successfully. Please wait for admin approval.");
+    }
+
     @GetMapping("/me")
     @PreAuthorize("hasAnyRole('CUSTOMER', 'SELLER', 'ADMIN')")
     public ResponseEntity<User> getCurrentUser(Principal principal) {

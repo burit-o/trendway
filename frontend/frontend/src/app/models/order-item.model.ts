@@ -3,17 +3,33 @@
 // Eğer product.model.ts farklı bir yoldaysa veya henüz oluşturulmadıysa, import yolu güncellenmeli veya model oluşturulmalıdır.
 import { Product } from './product.model'; 
 
+// Backend ile uyumlu RefundStatus enum'u
+export enum RefundStatus {
+  PENDING_APPROVAL = 'PENDING_APPROVAL',
+  APPROVED = 'APPROVED',
+  REJECTED = 'REJECTED',
+  COMPLETED = 'COMPLETED'
+}
+
 export interface OrderItem {
   id: number;
-  product: Product;
+  product?: Product; // Opsiyonel hale getiriyorum order.model.ts ile uyumlu olması için
   quantity: number;
   priceAtPurchase: number;
   status: OrderItemStatus;
-  // Backend OrderItem modelinizdeki diğer alanlar buraya eklenebilir
-  // Örneğin:
-  // subtotal: number; 
-  // sellerId: number;
-  // orderId: number;
+  // İade işlemleri için eklenmiş özellikler
+  refundStatus?: RefundStatus;
+  refundReason?: string;
+  refundRequestedAt?: Date;
+  refundProcessedAt?: Date;
+  // Backend tarafından gönderilen ek alanlar
+  productId?: number;
+  productName?: string;
+  imageUrl?: string;
+  // Satıcı bilgileri
+  sellerId?: number;
+  sellerName?: string;
+  order?: any; // Tip çakışmalarını önlemek için any olarak belirtildi
 }
 
 export enum OrderItemStatus {
@@ -24,6 +40,7 @@ export enum OrderItemStatus {
   DELIVERED = 'DELIVERED',
   CANCELED = 'CANCELED',
   CANCELLED_BY_SELLER = 'CANCELLED_BY_SELLER',
+  CANCELLED_BY_ADMIN = 'CANCELLED_BY_ADMIN',
   RETURN_REQUESTED = 'RETURN_REQUESTED',
   RETURN_APPROVED = 'RETURN_APPROVED',
   RETURN_REJECTED = 'RETURN_REJECTED',
@@ -31,6 +48,7 @@ export enum OrderItemStatus {
   EXCHANGE_REQUESTED = 'EXCHANGE_REQUESTED',
   EXCHANGE_APPROVED = 'EXCHANGE_APPROVED',
   EXCHANGE_REJECTED = 'EXCHANGE_REJECTED',
-  EXCHANGED = 'EXCHANGED'
+  EXCHANGED = 'EXCHANGED',
+  REFUNDED = 'REFUNDED'
   // Backend Enum ile aynı değerlere sahip olmalıdır
 } 

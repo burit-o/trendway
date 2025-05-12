@@ -1,13 +1,17 @@
 package com.ecommerce.backend.controller;
 
 import com.ecommerce.backend.model.Order;
+import com.ecommerce.backend.model.OrderItem;
 import com.ecommerce.backend.model.OrderItemStatus;
 import com.ecommerce.backend.model.OrderStatus;
+import com.ecommerce.backend.model.RefundStatus;
 import com.ecommerce.backend.model.User;
 import com.ecommerce.backend.repository.UserRepository;
 import com.ecommerce.backend.service.OrderService;
 import com.ecommerce.backend.service.StripeService;
 import com.ecommerce.backend.dto.OrderDto;
+import com.ecommerce.backend.dto.OrderItemDto;
+import com.ecommerce.backend.dto.RefundRequestDto;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.RequiredArgsConstructor;
 
@@ -19,11 +23,13 @@ import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.security.Principal;
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.stream.Collectors;
 
 @RestController
 @RequestMapping("/api/orders")
+@CrossOrigin(origins = "http://localhost:4200")
 // @RequiredArgsConstructor // Manuel constructor eklendiği için kaldırıldı veya yorumlandı
 public class OrderController {
     private final UserRepository userRepository;
@@ -78,7 +84,7 @@ public class OrderController {
     // 🔃 Sipariş durumunu güncelle (Sadece SELLER -> PREPARING → SHIPPED →
     // DELIVERED)
     @PutMapping("/update-status")
-    @PreAuthorize("hasRole('SELLER')")
+    @PreAuthorize("hasRole('ADMIN') or hasRole('SELLER')")
     public ResponseEntity<String> updateStatus(
             @RequestParam Long orderId,
             @RequestParam Long sellerId,
@@ -88,11 +94,23 @@ public class OrderController {
     }
 
     @PutMapping("/update-item-status")
+    @PreAuthorize("hasRole('ADMIN') or hasRole('SELLER')")
     public ResponseEntity<String> updateOrderItemStatus(
             @RequestParam Long orderItemId,
-            @RequestParam OrderItemStatus status) {
-        orderService.updateOrderItemStatus(orderItemId, status);
-        return ResponseEntity.ok("Order item status updated to " + status.name());
+            @RequestParam OrderItemStatus status,
+            Principal principal) {
+        try {
+            // Admin veya Satıcı kontrolü yapılacak
+            String userEmail = principal.getName();
+            orderService.updateOrderItemStatus(orderItemId, status, userEmail);
+            return ResponseEntity.ok("Order item status updated to " + status.name());
+        } catch (SecurityException e) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).body(e.getMessage());
+        } catch (IllegalStateException e) {
+            return ResponseEntity.status(HttpStatus.CONFLICT).body(e.getMessage());
+        } catch (RuntimeException e) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(e.getMessage());
+        }
     }
 
     // ❌ Siparişi Admin iptal eder
@@ -137,7 +155,13 @@ public class OrderController {
                         .body("You are not allowed to view orders of another user.");
             }
 
-            return ResponseEntity.ok(orderService.getOrdersByCustomer(userId));
+            List<Order> orders = orderService.getOrdersByCustomer(userId);
+            // Convert List<Order> to List<OrderDto>
+            List<OrderDto> orderDtos = orders.stream()
+                                             .map(OrderDto::fromEntity)
+                                             .collect(Collectors.toList());
+            return ResponseEntity.ok(orderDtos); // Return DTO list
+
         } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST)
                     .body("Failed to fetch orders: " + e.getMessage());
@@ -172,7 +196,7 @@ public class OrderController {
     }
 
     @PutMapping("/item/{orderItemId}/cancel-by-seller")
-    @PreAuthorize("hasRole('SELLER')")
+    @PreAuthorize("hasRole('SELLER') or hasRole('ADMIN')")
     public ResponseEntity<?> cancelOrderItemBySeller(
             @PathVariable Long orderItemId,
             Principal principal) {
@@ -186,6 +210,24 @@ public class OrderController {
             return ResponseEntity.status(HttpStatus.FORBIDDEN).body(e.getMessage()); // Yetkisiz işlem
         } catch (RuntimeException e) {
             return ResponseEntity.status(HttpStatus.NOT_FOUND).body(e.getMessage()); // Örn: Ürün veya satıcı bulunamadı
+        }
+    }
+
+    @PutMapping("/item/{orderItemId}/cancel-by-admin")
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<?> cancelOrderItemByAdmin(
+            @PathVariable Long orderItemId,
+            Principal principal) {
+        try {
+            String adminEmail = principal.getName();
+            com.ecommerce.backend.model.OrderItem updatedOrderItem = orderService.cancelOrderItemByAdmin(orderItemId, adminEmail);
+            return ResponseEntity.ok(updatedOrderItem);
+        } catch (IllegalStateException e) {
+            return ResponseEntity.status(HttpStatus.CONFLICT).body(e.getMessage()); 
+        } catch (SecurityException e) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).body(e.getMessage());
+        } catch (RuntimeException e) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(e.getMessage());
         }
     }
 
@@ -224,6 +266,118 @@ public class OrderController {
             return ResponseEntity.ok(orderDtos); // DTO listesini döndür
         } catch (Exception e) {
             logger.error("Failed to fetch orders for seller {}: {}", principal.getName(), e.getMessage(), e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body("Failed to fetch orders: " + e.getMessage());
+        }
+    }
+
+    // Müşteri iade talebi oluşturur
+    @PostMapping("/{orderId}/request-refund")
+    @PreAuthorize("hasAnyRole('CUSTOMER', 'USER')")
+    public ResponseEntity<?> requestRefund(
+            @PathVariable Long orderId,
+            @RequestBody RefundRequestDto refundRequest,
+            Principal principal) {
+        try {
+            String userEmail = principal.getName();
+            User user = userRepository.findByEmail(userEmail)
+                    .orElseThrow(() -> new RuntimeException("User not found"));
+            
+            OrderItem orderItem = orderService.requestRefund(orderId, refundRequest.getOrderItemId(), 
+                                                           refundRequest.getReason(), user.getId());
+            
+            return ResponseEntity.ok(OrderItemDto.fromEntity(orderItem));
+        } catch (SecurityException e) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).body(e.getMessage());
+        } catch (IllegalStateException e) {
+            return ResponseEntity.status(HttpStatus.CONFLICT).body(e.getMessage());
+        } catch (Exception e) {
+            logger.error("Refund request failed: {}", e.getMessage(), e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body("İade talebi işleme alınamadı: " + e.getMessage());
+        }
+    }
+    
+    // Satıcı bekleyen iade taleplerini listeler
+    @GetMapping("/refund-requests/by-seller")
+    @PreAuthorize("hasRole('SELLER')")
+    public ResponseEntity<?> getRefundRequestsBySeller(Principal principal) {
+        try {
+            User seller = userRepository.findByEmail(principal.getName())
+                    .orElseThrow(() -> new RuntimeException("Seller not found"));
+            
+            List<OrderItem> refundRequests = orderService.getRefundRequestsBySeller(seller.getId());
+            List<OrderItemDto> refundRequestDtos = refundRequests.stream()
+                    .map(OrderItemDto::fromEntity)
+                    .collect(Collectors.toList());
+            
+            return ResponseEntity.ok(refundRequestDtos);
+        } catch (Exception e) {
+            logger.error("Failed to fetch refund requests: {}", e.getMessage(), e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body("İade talepleri alınamadı: " + e.getMessage());
+        }
+    }
+    
+    // Satıcı iade talebini onaylar
+    @PutMapping("/refund-requests/{orderItemId}/approve")
+    @PreAuthorize("hasRole('SELLER')")
+    public ResponseEntity<?> approveRefundRequest(
+            @PathVariable Long orderItemId,
+            Principal principal) {
+        try {
+            User seller = userRepository.findByEmail(principal.getName())
+                    .orElseThrow(() -> new RuntimeException("Seller not found"));
+            
+            OrderItem orderItem = orderService.approveRefundRequest(orderItemId, seller.getId());
+            return ResponseEntity.ok(OrderItemDto.fromEntity(orderItem));
+        } catch (SecurityException e) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).body(e.getMessage());
+        } catch (IllegalStateException e) {
+            return ResponseEntity.status(HttpStatus.CONFLICT).body(e.getMessage());
+        } catch (Exception e) {
+            logger.error("Failed to approve refund request: {}", e.getMessage(), e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body("İade talebi onaylanamadı: " + e.getMessage());
+        }
+    }
+    
+    // Satıcı iade talebini reddeder
+    @PutMapping("/refund-requests/{orderItemId}/reject")
+    @PreAuthorize("hasRole('SELLER')")
+    public ResponseEntity<?> rejectRefundRequest(
+            @PathVariable Long orderItemId,
+            @RequestParam String rejectionReason,
+            Principal principal) {
+        try {
+            User seller = userRepository.findByEmail(principal.getName())
+                    .orElseThrow(() -> new RuntimeException("Seller not found"));
+            
+            OrderItem orderItem = orderService.rejectRefundRequest(orderItemId, rejectionReason, seller.getId());
+            return ResponseEntity.ok(OrderItemDto.fromEntity(orderItem));
+        } catch (SecurityException e) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).body(e.getMessage());
+        } catch (IllegalStateException e) {
+            return ResponseEntity.status(HttpStatus.CONFLICT).body(e.getMessage());
+        } catch (Exception e) {
+            logger.error("Failed to reject refund request: {}", e.getMessage(), e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body("İade talebi reddedilemedi: " + e.getMessage());
+        }
+    }
+
+    // Admin: Tüm siparişleri getir
+    @GetMapping("/all")
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<?> getAllOrders() {
+        try {
+            List<Order> allOrders = orderService.getAllOrders();
+            List<OrderDto> orderDtos = allOrders.stream()
+                                            .map(OrderDto::fromEntity)
+                                            .collect(Collectors.toList());
+            return ResponseEntity.ok(orderDtos);
+        } catch (Exception e) {
+            logger.error("Failed to fetch all orders: {}", e.getMessage(), e);
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                     .body("Failed to fetch orders: " + e.getMessage());
         }

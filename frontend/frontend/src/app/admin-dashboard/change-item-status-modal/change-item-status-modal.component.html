@@ -1,0 +1,21 @@
+<div class="modal-backdrop" *ngIf="isVisible" (click)="onBackdropClick($event)">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title">Change Status for Item: {{ item.productName }} (Order #{{ order.id }})</h5>
+        <button type="button" class="btn-close" (click)="onClose()"></button>
+      </div>
+      <div class="modal-body">
+        <p>Current Status: <strong>{{ item.status }}</strong></p>
+        <p>Select new status:</p>
+        <select class="form-select" [(ngModel)]="newStatus">
+          <option *ngFor="let status of availableStatuses" [value]="status">{{ status }}</option>
+        </select>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" (click)="onClose()">Cancel</button>
+        <button type="button" class="btn btn-primary" (click)="onSave()" [disabled]="!newStatus || newStatus === item.status">Save changes</button>
+      </div>
+    </div>
+  </div>
+</div>

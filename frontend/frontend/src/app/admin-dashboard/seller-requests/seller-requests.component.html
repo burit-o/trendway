@@ -1,0 +1,59 @@
+<div class="container-fluid mt-4">
+  <h3>Seller Requests</h3>
+
+  <div *ngIf="isLoading" class="text-center my-5">
+    <div class="spinner-border text-primary" role="status">
+      <span class="visually-hidden">Loading...</span>
+    </div>
+    <p class="mt-2">Loading seller requests...</p>
+  </div>
+
+  <div *ngIf="error" class="alert alert-danger">
+    <i class="bi bi-exclamation-triangle-fill me-2"></i> {{ error }}
+    <button class="btn btn-sm btn-link text-danger p-0 ms-2" (click)="loadSellerRequests()">Retry</button>
+  </div>
+
+  <div *ngIf="actionSuccess" class="alert alert-success alert-dismissible fade show" role="alert">
+    {{ actionSuccess }}
+    <button type="button" class="btn-close" (click)="actionSuccess = null" aria-label="Close"></button>
+  </div>
+
+  <div *ngIf="actionError" class="alert alert-danger alert-dismissible fade show" role="alert">
+    {{ actionError }}
+    <button type="button" class="btn-close" (click)="actionError = null" aria-label="Close"></button>
+  </div>
+
+  <div *ngIf="!isLoading && !error && requests.length === 0" class="alert alert-info">
+    <i class="bi bi-info-circle-fill me-2"></i> No pending seller requests found.
+  </div>
+
+  <div *ngIf="!isLoading && !error && requests.length > 0" class="table-responsive">
+    <table class="table table-hover table-striped align-middle">
+      <thead class="table-light">
+        <tr>
+          <th scope="col">#</th>
+          <th scope="col">User ID</th>
+          <th scope="col">Full Name</th>
+          <th scope="col">Email</th>
+          <th scope="col">Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr *ngFor="let request of requests; let i = index">
+          <th scope="row">{{ i + 1 }}</th>
+          <td>{{ request.id }}</td>
+          <td>{{ request.firstName }} {{ request.lastName }}</td>
+          <td>{{ request.email }}</td>
+          <td>
+            <button class="btn btn-success btn-sm me-2" (click)="approveRequest(request.id)" title="Approve Request">
+              <i class="bi bi-check-lg"></i> Approve
+            </button>
+            <button class="btn btn-danger btn-sm" (click)="rejectRequest(request.id)" title="Reject Request">
+              <i class="bi bi-x-lg"></i> Reject
+            </button>
+          </td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+</div>
