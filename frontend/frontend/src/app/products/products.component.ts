@@ -22,6 +22,7 @@ export class ProductsComponent implements OnInit {
   filteredProducts: Product[] = [];
   categories: Category[] = [];
   isLoggedIn = false;
+  currentUser: any = null;
   cartItemCount = 0;
   minPrice: number | null = null;
   maxPrice: number | null = null;
@@ -52,6 +53,9 @@ export class ProductsComponent implements OnInit {
   ngOnInit(): void {
     this.loadCategories();
     this.isLoggedIn = this.authService.isLoggedIn();
+    if (this.isLoggedIn) {
+      this.currentUser = this.authService.currentUserValue;
+    }
     this.updateCartCount();
 
     // URL'deki query parametrelerini dinle (kategori değişimi için)
@@ -225,6 +229,7 @@ export class ProductsComponent implements OnInit {
   logout(): void {
     this.authService.logout();
     this.isLoggedIn = false;
+    this.currentUser = null;
     this.cartItemCount = 0;
     this.router.navigate(['/products']);
   }

@@ -29,6 +29,7 @@ import java.util.stream.Collectors;
 
 @RestController
 @RequestMapping("/api/orders")
+@CrossOrigin(origins = "http://localhost:4200")
 // @RequiredArgsConstructor // Manuel constructor eklendiği için kaldırıldı veya yorumlandı
 public class OrderController {
     private final UserRepository userRepository;

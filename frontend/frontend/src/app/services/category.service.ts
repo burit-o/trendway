@@ -60,6 +60,10 @@ export class CategoryService {
       'Authorization': `Bearer ${token}`
     });
     
-    return this.http.delete(`${this.apiUrl}/delete/${id}`, { headers });
+    // ResponseType 'text' olarak ayarlanıyor, böylece JSON parsing hatası olmayacak
+    return this.http.delete(`${this.apiUrl}/delete/${id}`, { 
+      headers,
+      responseType: 'text' 
+    });
   }
 }

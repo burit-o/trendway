@@ -44,9 +44,14 @@
 
           <!-- New Profile & Auth Buttons -->
           <ng-container *ngIf="isLoggedIn; else loggedOutUser">
-            <a class="nav-link ms-2" routerLink="/profile" title="Profile">
-              <i class="bi bi-person-fill fs-5"></i>
+            <a class="nav-link ms-2" routerLink="/profile" title="Profile" *ngIf="currentUser; else profileIcon">
+              {{ currentUser.firstName || 'Profile' }}
             </a>
+            <ng-template #profileIcon>
+              <a class="nav-link ms-2" routerLink="/profile" title="Profile">
+                <i class="bi bi-person-fill fs-5"></i>
+              </a>
+            </ng-template>
             <a class="nav-link ms-2" (click)="logout()" title="Logout" style="cursor:pointer;">
               <i class="bi bi-box-arrow-right fs-5"></i>
             </a>
@@ -168,9 +173,9 @@
           <h4>Contact Us</h4>
           <p>Have questions? We're here to help!</p>
           <ul class="list-unstyled">
-            <li><i class="bi bi-envelope me-2"></i> support&#64;ecommerce.com</li>
-            <li><i class="bi bi-telephone me-2"></i> +1 (555) 123-4567</li>
-            <li><i class="bi bi-geo-alt me-2"></i> 123 Main St, City, Country</li>
+            <li><i class="bi bi-envelope me-2"></i> erdembatuhan0069&#64;gmail.com</li>
+            <li><i class="bi bi-telephone me-2"></i> +90 (546) 420 06 83</li>
+            <li><i class="bi bi-geo-alt me-2"></i> Pınarbaşı mah. TeknoKent AR-GE 2, Antalya, Konyaaltı</li>
           </ul>
         </div>
         <div class="col-md-6">
