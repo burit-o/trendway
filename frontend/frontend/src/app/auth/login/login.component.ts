@@ -67,18 +67,28 @@ export class LoginComponent implements OnInit {
           .subscribe({
             next: () => {
               console.log(`Product ${addToCartProductId} added to cart for user ${response.userId}`);
-              this.router.navigateByUrl(returnUrl); // returnUrl'e yönlendir
+              // Sepete ürün eklendikten sonra yönlendirme
+              if (response.role === 'CUSTOMER' || response.role === 'USER') {
+                this.router.navigate(['/products']);
+              } else {
+                this.router.navigateByUrl(returnUrl);
+              }
             },
             error: (cartError) => {
               console.error('Failed to add item to cart after login:', cartError);
               // Sepete ekleme başarısız olsa bile kullanıcıyı yönlendir
-              this.router.navigateByUrl(returnUrl);
+              if (response.role === 'CUSTOMER' || response.role === 'USER') {
+                this.router.navigate(['/products']);
+              } else {
+                this.router.navigateByUrl(returnUrl);
+              }
             }
           });
         } else {
           // Normal rol bazlı yönlendirme
           switch(response.role) {
             case 'CUSTOMER':
+            case 'USER':
               this.router.navigate(['/products']);
               break;
             case 'SELLER':
