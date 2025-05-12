@@ -1,6 +1,6 @@
 <nav class="navbar navbar-expand-lg navbar-light bg-light mb-4">
   <div class="container">
-    <a class="navbar-brand d-flex align-items-center" href="#" (click)="onSelectCategory()">
+    <a class="navbar-brand d-flex align-items-center" href="#" (click)="onLogoClick()">
       <img src="https://i.imgur.com/18peO8G.png" alt="Trendway Logo" style="height: 80px;">
     </a>
 
@@ -10,48 +10,19 @@
 
     <div class="collapse navbar-collapse" id="navbarNavContent">
       <ul class="navbar-nav me-auto mb-2 mb-lg-0 mt-3">
-        <li class="nav-item">
-          <a class="nav-link" href="javascript:void(0)" (click)="onSelectCategory()">All Products</a>
-        </li>
-        <li *ngIf="isLoadingCategories" class="nav-item">
-          <span class="nav-link">
-              <span class="spinner-border spinner-border-sm"></span> Loading Categories...
-          </span>
-        </li>
-        <li *ngIf="categoryError && !isLoadingCategories" class="nav-item">
-          <span class="nav-link text-danger">{{ categoryError }}</span>
-        </li>
-        <li class="nav-item" *ngFor="let category of categories">
-          <a class="nav-link" href="javascript:void(0)" (click)="onSelectCategory(category)">
-            {{ category.name }}
-          </a>
-        </li>
+        <!-- "All Products" ve Kategori listesi kaldırıldı -->
       </ul>
 
       <!-- Right side menu -->
       <div class="d-flex align-items-center ms-auto">
-        <!-- Cart Icon -->
-        <a class="nav-link position-relative me-3" routerLink="/cart" title="View Cart">
-          <i class="bi bi-cart3 fs-5"></i>
-          <span *ngIf="cartItemCount > 0"
-                class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger">
-            {{cartItemCount}}
-            <span class="visually-hidden">items in cart</span>
-          </span>
-        </a>
-        <!-- Cart Error Indicator (Optional) -->
-        <i *ngIf="cartError" class="bi bi-exclamation-circle-fill text-danger ms-1" title="{{ cartError }}"></i>
+        <!-- Sepet ikonu kaldırıldı -->
 
         <!-- Profile & Auth Buttons -->
         <ng-container *ngIf="isLoggedIn; else loggedOutUser">
-          <a class="nav-link ms-2" routerLink="/profile" title="Profile" *ngIf="currentUser; else profileIcon">
-            {{ currentUser.firstName || 'Profile' }}
+          <!-- Kullanıcı adı kaldırıldı, her zaman profil ikonu gösterilecek -->
+          <a class="nav-link ms-2" routerLink="/profile" title="Profile">
+            <i class="bi bi-person-fill fs-5"></i>
           </a>
-          <ng-template #profileIcon>
-            <a class="nav-link ms-2" routerLink="/profile" title="Profile">
-              <i class="bi bi-person-fill fs-5"></i>
-            </a>
-          </ng-template>
           <a class="nav-link ms-2" (click)="logout()" title="Logout" style="cursor:pointer;">
             <i class="bi bi-box-arrow-right fs-5"></i>
           </a>

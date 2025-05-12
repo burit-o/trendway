@@ -11,8 +11,7 @@ import { Cart } from '../models/cart.model';
   selector: 'app-header',
   standalone: true,
   imports: [CommonModule, RouterModule],
-  templateUrl: './header.component.html',
-  styleUrls: ['./header.component.scss']
+  templateUrl: './header.component.html'
 })
 export class HeaderComponent implements OnInit {
   isLoggedIn = false;
@@ -83,6 +82,8 @@ export class HeaderComponent implements OnInit {
         error: (error: Error) => {
           this.cartError = 'Failed to update cart count in header.';
           console.error('Error updating cart count in header:', error);
+          // Sepet bulunamazsa veya başka bir hata olursa sayacı sıfırla
+          this.cartItemCount = 0;
         }
       });
     } else {
@@ -93,7 +94,11 @@ export class HeaderComponent implements OnInit {
   onSelectCategory(category?: Category): void {
     const categoryId = category ? category.id : null;
     // Kategoriye tıklandığında /products sayfasına yönlendir ve categoryId parametresini gönder
-    this.router.navigate(['/products'], { queryParams: { categoryId: categoryId } });
+    this.router.navigate(['/products'], { queryParams: { categoryId: categoryId }, queryParamsHandling: 'merge' });
+  }
+
+  onLogoClick(): void {
+    this.router.navigate(['/products']);
   }
 
   logout(): void {
