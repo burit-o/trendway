@@ -150,6 +150,17 @@ public class OrderService {
             return; // İşlem yapılacak item yoksa veya order null ise çık
         }
 
+        // Tüm ürünler iade edilmiş mi kontrol et
+        boolean allItemsRefunded = order.getItems().stream()
+            .allMatch(item -> item.getStatus() == OrderItemStatus.REFUNDED);
+        
+        if (allItemsRefunded) {
+            order.setStatus(OrderStatus.REFUNDED);
+            orderRepository.save(order);
+            return;
+        }
+        
+        // Tüm ürünler iptal edilmiş mi kontrol et
         boolean allItemsCancelled = order.getItems().stream()
             .allMatch(item -> item.getStatus() == OrderItemStatus.CANCELLED || 
                                item.getStatus() == OrderItemStatus.CANCELLED_BY_SELLER);
@@ -160,12 +171,17 @@ public class OrderService {
             return;
         }
 
-        // Eğer hepsi iptal değilse, diğer durumları kontrol et
+        // Eğer hepsi iptal veya iade değilse, diğer durumları kontrol et
         boolean allDelivered = order.getItems().stream()
-                .filter(item -> item.getStatus() != OrderItemStatus.CANCELLED && item.getStatus() != OrderItemStatus.CANCELLED_BY_SELLER)
+                .filter(item -> item.getStatus() != OrderItemStatus.CANCELLED && 
+                               item.getStatus() != OrderItemStatus.CANCELLED_BY_SELLER &&
+                               item.getStatus() != OrderItemStatus.REFUNDED)
                 .allMatch(item -> item.getStatus() == OrderItemStatus.DELIVERED);
+                
         boolean allShipped = order.getItems().stream()
-                .filter(item -> item.getStatus() != OrderItemStatus.CANCELLED && item.getStatus() != OrderItemStatus.CANCELLED_BY_SELLER)
+                .filter(item -> item.getStatus() != OrderItemStatus.CANCELLED && 
+                               item.getStatus() != OrderItemStatus.CANCELLED_BY_SELLER &&
+                               item.getStatus() != OrderItemStatus.REFUNDED)
                 .allMatch(item -> item.getStatus() == OrderItemStatus.SHIPPED || item.getStatus() == OrderItemStatus.DELIVERED);
 
         if (allDelivered) {
@@ -177,8 +193,11 @@ public class OrderService {
             // Ya da daha karmaşık bir mantık gerekebilir. Şimdilik PREPARING olarak bırakalım.
             // İptal olmayan ve teslim edilmemiş/gönderilmemiş item varsa PREPARING'dir.
             boolean anyPreparing = order.getItems().stream()
-                .filter(item -> item.getStatus() != OrderItemStatus.CANCELLED && item.getStatus() != OrderItemStatus.CANCELLED_BY_SELLER)
+                .filter(item -> item.getStatus() != OrderItemStatus.CANCELLED && 
+                               item.getStatus() != OrderItemStatus.CANCELLED_BY_SELLER &&
+                               item.getStatus() != OrderItemStatus.REFUNDED)
                 .anyMatch(item -> item.getStatus() == OrderItemStatus.PREPARING);
+                
             if (anyPreparing) {
                 order.setStatus(OrderStatus.PREPARING);
             }
@@ -186,6 +205,7 @@ public class OrderService {
             // Bu durumda, siparişin ilk durumuna (genellikle PREPARING) veya daha genel bir duruma (PROCESSING) dönülebilir.
             // Şimdilik, PREPARING yoksa ve hepsi SHIPPED/DELIVERED değilse durum değişmeyebilir veya mevcut mantıkla devam edebilir.
         }
+        
         orderRepository.save(order);
     }
 
@@ -464,12 +484,30 @@ public class OrderService {
         // İade talebini onayla
         orderItem.setRefundStatus(RefundStatus.APPROVED);
         orderItem.setRefundProcessedAt(LocalDateTime.now());
-        orderItem.setStatus(OrderItemStatus.EXCHANGED); // veya iade durumuna özel bir durum 
+        orderItem.setStatus(OrderItemStatus.REFUNDED); // EXCHANGED yerine REFUNDED kullanıyoruz
         
         Order order = orderItem.getOrder();
         
-        // Stripe ile ödeme iadesi işlemlerini yapabilirsiniz
-        // Örnek: refund(order.getPaymentIntentId(), orderItem.getPriceAtPurchase() * orderItem.getQuantity());
+        // Stripe ile ödeme iadesi işlemlerini aktifleştir
+        if (order.getPaymentIntentId() != null && !order.getPaymentIntentId().isEmpty()) {
+            try {
+                long amountToRefundCents = (long) (orderItem.getPriceAtPurchase() * orderItem.getQuantity() * 100);
+                logger.info("Attempting Stripe refund for OrderItem ID: {}, Amount: {} cents, PaymentIntentId: {}", 
+                    orderItemId, amountToRefundCents, order.getPaymentIntentId());
+                
+                stripeService.refundPayment(order.getPaymentIntentId(), amountToRefundCents);
+                
+                // İade başarılı olduğunda refundStatus'u COMPLETED olarak güncelle
+                orderItem.setRefundStatus(RefundStatus.COMPLETED);
+                logger.info("Stripe refund successful for OrderItem ID: {}", orderItemId);
+            } catch (Exception e) {
+                // İade hatası durumunda loglama yap ama işlemi durdurma
+                logger.error("Stripe refund failed for OrderItem ID: {}. Error: {}", orderItemId, e.getMessage(), e);
+            }
+        } else {
+            logger.warn("PaymentIntentId is null or empty for Order ID: {}. Skipping Stripe refund for OrderItem ID: {}", 
+                order.getId(), orderItemId);
+        }
         
         // Sipariş durumunu güncelle
         updateOverallOrderStatus(order);
