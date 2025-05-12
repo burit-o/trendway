@@ -38,15 +38,22 @@ public class AuthService {
     }
 
     public AuthResponse login(AuthRequest request) {
+        // Önce kullanıcıyı bul ve ban durumunu kontrol et
+        User user = userRepository.findByEmail(request.getEmail())
+                .orElseThrow(() -> new UsernameNotFoundException("User not found"));
+
+        // Kullanıcı banlanmışsa özel bir hata fırlat
+        if (user.isBanned()) {
+            throw new RuntimeException("User is banned. Please contact support for assistance.");
+        }
+
+        // Sonra kimlik doğrulamasını yap
         authenticationManager.authenticate(
                 new UsernamePasswordAuthenticationToken(
                         request.getEmail(),
                         request.getPassword()
                 )
         );
-
-        User user = userRepository.findByEmail(request.getEmail())
-                .orElseThrow(() -> new UsernameNotFoundException("User not found"));
 
         String token = jwtService.generateToken(user);
 

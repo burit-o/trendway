@@ -99,11 +99,11 @@ export class LoginComponent implements OnInit {
             case 'USER':
               this.router.navigate(['/products']);
               break;
-            case 'SELLER':
-              this.router.navigate(['/dashboard']);
-              break;
             case 'ADMIN':
               this.router.navigate(['/panel']);
+              break;
+            case 'SELLER':
+              this.router.navigate(['/dashboard']);
               break;
             default:
               this.router.navigate(['/']);
@@ -112,7 +112,30 @@ export class LoginComponent implements OnInit {
       },
       error: (error) => {
         console.error('Login failed:', error);
-        this.error = error.error?.message || 'An error occurred during login';
+        
+        // Basitleştirilmiş hata yakalama
+        if (error?.error) {
+          // Sunucudan gelen string hata mesajı
+          if (typeof error.error === 'string') {
+            this.error = error.error;
+            
+            // Konsola daha detaylı bilgi
+            if (error.error.includes('banned')) {
+              console.log('Banned user detected:', loginData.email);
+            }
+          } 
+          // Obje olarak gelen hata mesajı
+          else if (error.error.message) {
+            this.error = error.error.message;
+          }
+          // Genel hata durumu
+          else {
+            this.error = 'An error occurred during login. Please try again.';
+          }
+        } else {
+          this.error = 'Connection error. Please check your internet connection.';
+        }
+        
         this.loading = false;
       },
       complete: () => {

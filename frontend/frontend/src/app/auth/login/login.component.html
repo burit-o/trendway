@@ -46,7 +46,8 @@
             </div>
 
             <div *ngIf="error" class="alert alert-danger mt-3">
-              {{error}}
+              <strong *ngIf="error.includes('banned')">⚠️ Account Banned!</strong>
+              <span>{{error}}</span>
             </div>
           </form>
 

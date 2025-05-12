@@ -109,6 +109,7 @@ export class UserManagementComponent implements OnInit {
             user.status = 'active';
             user.isBanned = false;
             console.log(`User ${user.id} unbanned successfully:`, response);
+            this.refreshUsers();
           },
           error: (error) => {
             console.error(`Error unbanning user ${user.id}:`, error);
@@ -122,6 +123,7 @@ export class UserManagementComponent implements OnInit {
             user.status = 'banned';
             user.isBanned = true;
             console.log(`User ${user.id} banned successfully:`, response);
+            this.refreshUsers();
           },
           error: (error) => {
             console.error(`Error banning user ${user.id}:`, error);
@@ -129,5 +131,11 @@ export class UserManagementComponent implements OnInit {
           }
         });
     }
+  }
+
+  refreshUsers(): void {
+    setTimeout(() => {
+      this.loadUsers();
+    }, 500);
   }
 } 

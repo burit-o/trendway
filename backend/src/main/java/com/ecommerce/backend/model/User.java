@@ -7,6 +7,7 @@ import java.util.List;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonManagedReference;
+import com.fasterxml.jackson.annotation.JsonProperty;
 
 @Entity
 @Table(name = "users")
@@ -32,6 +33,7 @@ public class User {
     @Column(nullable = false)
     private Role role;
 
+    @JsonProperty("isBanned")
     private boolean banned = false;
 
     @OneToMany(cascade = CascadeType.ALL)
