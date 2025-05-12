@@ -305,7 +305,9 @@ public class OrderService {
         // İade öncesi siparişin en güncel halini DB'den çek
         Order freshOrder = orderRepository.findById(order.getId()).orElse(order);
         String paymentIntentId = freshOrder.getPaymentIntentId();
-        logger.info("Fresh PaymentIntentId from DB for order {}: '{}'", freshOrder.getId(), paymentIntentId);
+        String checkoutSessionId = freshOrder.getStripeCheckoutSessionId();
+        logger.info("Order details for refund check in cancelOrderItemBySeller - OrderID: {}, PaymentIntentId: '{}', CheckoutSessionId: '{}'", 
+            freshOrder.getId(), paymentIntentId, checkoutSessionId);
 
         Product product = orderItem.getProduct();
         if (product == null || product.getSeller() == null) {
@@ -333,30 +335,26 @@ public class OrderService {
             throw new IllegalStateException("Order item is already cancelled.");
         }
 
-        // Stripe üzerinden ödeme iadesi yap
-        if (paymentIntentId != null && !paymentIntentId.isBlank()) {
+        // Stripe üzerinden ödeme iadesi yap (CheckoutSessionId öncelikli)
+        if (checkoutSessionId != null && !checkoutSessionId.isBlank()) {
             try {
-                // İade edilecek tutarı hesapla: iptal edilen ürünün fiyatı * miktarı
-                // Bu, OrderItem'daki priceAtPurchase kullanılmalı, çünkü ürün fiyatı değişmiş olabilir.
                 long amountToRefundCents = (long) (orderItem.getPriceAtPurchase() * orderItem.getQuantity() * 100);
-                logger.info("Attempting to refund {} cents for order item ID {} (Order ID: {}, PaymentIntentId: '{}')", 
-                    amountToRefundCents, orderItemId, freshOrder.getId(), paymentIntentId);
+                logger.info("cancelOrderItemBySeller: Attempting refund via CheckoutSessionId: '{}'. Amount: {} cents for OrderItem ID: {}", 
+                    checkoutSessionId, amountToRefundCents, orderItemId);
                 
-                stripeService.refundPayment(paymentIntentId, amountToRefundCents);
+                stripeService.refundPayment(checkoutSessionId, amountToRefundCents);
                 
                 logger.info("Refund processed successfully by StripeService for order item ID: {}. Amount: {} cents", orderItemId, amountToRefundCents);
 
             } catch (StripeException e) {
-                // İade başarısız olursa logla ve devam et (ürün stoğu hala güncellenmeli, sipariş durumu değişmeli)
-                logger.error("Stripe refund failed for order item ID: {}. PaymentIntentId: '{}'. Error: {}", 
-                    orderItemId, paymentIntentId, e.getMessage());
-                // İsteğe bağlı olarak burada özel bir exception atılabilir veya farklı bir işlem yapılabilir.
+                logger.error("Stripe refund failed for order item ID: {}. CheckoutSessionId: '{}'. Error: {}", 
+                    orderItemId, checkoutSessionId, e.getMessage());
             } catch (Exception e) {
-                logger.error("An unexpected error occurred during refund for order item ID: {}. PaymentIntentId: '{}'. Error: {}", 
-                    orderItemId, paymentIntentId, e.getMessage(), e);
+                logger.error("An unexpected error occurred during refund for order item ID: {}. CheckoutSessionId: '{}'. Error: {}", 
+                    orderItemId, checkoutSessionId, e.getMessage(), e);
             }
         } else {
-            logger.warn("PaymentIntentId is null or blank for order ID: {}. Skipping refund for order item ID: {}.", 
+            logger.warn("StripeCheckoutSessionId is null or blank for order ID: {}. Skipping refund for order item ID: {}.", 
                 freshOrder.getId(), orderItemId);
         }
         
@@ -408,7 +406,9 @@ public class OrderService {
         // İade öncesi siparişin en güncel halini DB'den çek
         Order freshOrder = orderRepository.findById(order.getId()).orElse(order);
         String paymentIntentId = freshOrder.getPaymentIntentId();
-        logger.info("Fresh PaymentIntentId from DB for order {}: '{}'", freshOrder.getId(), paymentIntentId);
+        String checkoutSessionId = freshOrder.getStripeCheckoutSessionId();
+        logger.info("Order details for refund check in cancelOrderItemByAdmin - OrderID: {}, PaymentIntentId: '{}', CheckoutSessionId: '{}'", 
+            freshOrder.getId(), paymentIntentId, checkoutSessionId);
 
         Product product = orderItem.getProduct();
         if (product == null) {
@@ -428,28 +428,26 @@ public class OrderService {
             throw new IllegalStateException("Order item is already cancelled.");
         }
 
-        // Stripe üzerinden ödeme iadesi yap
-        if (paymentIntentId != null && !paymentIntentId.isBlank()) {
+        // Stripe üzerinden ödeme iadesi yap (CheckoutSessionId öncelikli)
+        if (checkoutSessionId != null && !checkoutSessionId.isBlank()) {
             try {
-                // İade edilecek tutarı hesapla: iptal edilen ürünün fiyatı * miktarı
                 long amountToRefundCents = (long) (orderItem.getPriceAtPurchase() * orderItem.getQuantity() * 100);
-                logger.info("Attempting to refund {} cents for order item ID {} (Order ID: {}, PaymentIntentId: '{}')", 
-                    amountToRefundCents, orderItemId, freshOrder.getId(), paymentIntentId);
+                logger.info("cancelOrderItemByAdmin: Attempting refund via CheckoutSessionId: '{}'. Amount: {} cents for OrderItem ID: {}", 
+                    checkoutSessionId, amountToRefundCents, orderItemId);
                 
-                stripeService.refundPayment(paymentIntentId, amountToRefundCents);
+                stripeService.refundPayment(checkoutSessionId, amountToRefundCents);
                 
                 logger.info("Refund processed successfully by StripeService for order item ID: {}. Amount: {} cents", orderItemId, amountToRefundCents);
 
             } catch (StripeException e) {
-                // İade başarısız olursa logla ve devam et
-                logger.error("Stripe refund failed for order item ID: {}. PaymentIntentId: '{}'. Error: {}", 
-                    orderItemId, paymentIntentId, e.getMessage());
+                logger.error("Stripe refund failed for order item ID: {}. CheckoutSessionId: '{}'. Error: {}", 
+                    orderItemId, checkoutSessionId, e.getMessage());
             } catch (Exception e) {
-                logger.error("An unexpected error occurred during refund for order item ID: {}. PaymentIntentId: '{}'. Error: {}", 
-                    orderItemId, paymentIntentId, e.getMessage(), e);
+                logger.error("An unexpected error occurred during refund for order item ID: {}. CheckoutSessionId: '{}'. Error: {}", 
+                    orderItemId, checkoutSessionId, e.getMessage(), e);
             }
         } else {
-            logger.warn("PaymentIntentId is null or blank for order ID: {}. Skipping refund for order item ID: {}.", 
+            logger.warn("StripeCheckoutSessionId is null or blank for order ID: {}. Skipping refund for order item ID: {}.", 
                 freshOrder.getId(), orderItemId);
         }
         
@@ -641,7 +639,7 @@ public class OrderService {
         if (order.getStripeCheckoutSessionId() != null && !order.getStripeCheckoutSessionId().isEmpty()) {
             try {
                 long amountToRefundCents = (long) (orderItem.getPriceAtPurchase() * orderItem.getQuantity() * 100);
-                logger.info("Attempting Stripe refund for OrderItem ID: {}, Amount: {} cents, CheckoutSessionId: {}", 
+                logger.info("OrderService.approveRefundRequest: Attempting refund for OrderItem ID: {}. Calculated amountToRefundCents: {}. StripeCheckoutSessionId: {}", 
                     orderItemId, amountToRefundCents, order.getStripeCheckoutSessionId());
                 
                 stripeService.refundPayment(order.getStripeCheckoutSessionId(), amountToRefundCents);

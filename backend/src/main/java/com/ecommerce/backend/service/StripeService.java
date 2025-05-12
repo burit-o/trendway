@@ -108,17 +108,19 @@ public class StripeService {
     }
 
     public void refundPayment(String checkoutSessionId, Long amountInCents) throws StripeException {
-        logger.info("Attempting Stripe refund for CheckoutSessionId: \'{}\', Amount: {} cents", checkoutSessionId, amountInCents);
+        logger.info("StripeService.refundPayment: Received checkoutSessionId: '{}', amountInCents: {}", checkoutSessionId, amountInCents);
         
         String paymentIntentId = retrievePaymentIntentId(checkoutSessionId);
-        
-        logger.info("Obtained PaymentIntentId \'{}\' from CheckoutSessionId \'{}\'. Proceeding with refund.", paymentIntentId, checkoutSessionId);
+        logger.info("StripeService.refundPayment: Retrieved PaymentIntentId: '{}' from checkoutSessionId: '{}'", paymentIntentId, checkoutSessionId);
 
         RefundCreateParams.Builder paramsBuilder = RefundCreateParams.builder()
                 .setPaymentIntent(paymentIntentId);
 
         if (amountInCents != null && amountInCents > 0) {
             paramsBuilder.setAmount(amountInCents);
+            logger.info("StripeService.refundPayment: Called paramsBuilder.setAmount({}) for PaymentIntentId: '{}'", amountInCents, paymentIntentId);
+        } else {
+            logger.warn("StripeService.refundPayment: amountInCents is '{}' (null, zero, or negative). Proceeding with FULL refund for PaymentIntentId: '{}'", amountInCents, paymentIntentId);
         }
 
         try {
