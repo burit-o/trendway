@@ -638,13 +638,13 @@ public class OrderService {
         Order order = orderItem.getOrder();
         
         // Stripe ile ödeme iadesi işlemlerini aktifleştir
-        if (order.getPaymentIntentId() != null && !order.getPaymentIntentId().isEmpty()) {
+        if (order.getStripeCheckoutSessionId() != null && !order.getStripeCheckoutSessionId().isEmpty()) {
             try {
                 long amountToRefundCents = (long) (orderItem.getPriceAtPurchase() * orderItem.getQuantity() * 100);
-                logger.info("Attempting Stripe refund for OrderItem ID: {}, Amount: {} cents, PaymentIntentId: {}", 
-                    orderItemId, amountToRefundCents, order.getPaymentIntentId());
+                logger.info("Attempting Stripe refund for OrderItem ID: {}, Amount: {} cents, CheckoutSessionId: {}", 
+                    orderItemId, amountToRefundCents, order.getStripeCheckoutSessionId());
                 
-                stripeService.refundPayment(order.getPaymentIntentId(), amountToRefundCents);
+                stripeService.refundPayment(order.getStripeCheckoutSessionId(), amountToRefundCents);
                 
                 // İade başarılı olduğunda refundStatus'u COMPLETED olarak güncelle
                 orderItem.setRefundStatus(RefundStatus.COMPLETED);
@@ -652,9 +652,11 @@ public class OrderService {
             } catch (Exception e) {
                 // İade hatası durumunda loglama yap ama işlemi durdurma
                 logger.error("Stripe refund failed for OrderItem ID: {}. Error: {}", orderItemId, e.getMessage(), e);
+                // Başarısız olsa bile iade talebini APPROVED olarak bırakabiliriz ya da farklı bir status (örn: REFUND_FAILED) eklenebilir.
+                // Şimdilik APPROVED olarak kalıyor, refundStatus COMPLETED'a geçmiyor.
             }
         } else {
-            logger.warn("PaymentIntentId is null or empty for Order ID: {}. Skipping Stripe refund for OrderItem ID: {}", 
+            logger.warn("StripeCheckoutSessionId is null or empty for Order ID: {}. Skipping Stripe refund for OrderItem ID: {}", 
                 order.getId(), orderItemId);
         }
         

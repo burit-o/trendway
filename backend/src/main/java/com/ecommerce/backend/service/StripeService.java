@@ -9,6 +9,7 @@ import com.stripe.exception.StripeException;
 import com.stripe.model.Refund;
 import com.stripe.model.checkout.Session;
 import com.stripe.param.RefundCreateParams;
+import com.stripe.param.checkout.SessionRetrieveParams;
 import com.stripe.param.checkout.SessionCreateParams;
 import jakarta.annotation.PostConstruct;
 import lombok.RequiredArgsConstructor;
@@ -49,34 +50,29 @@ public class StripeService {
                 .setMode(SessionCreateParams.Mode.PAYMENT)
                 .setSuccessUrl("http://localhost:4200/payment-success")
                 .setCancelUrl("http://localhost:4200/payment-cancel")
+                .addPaymentMethodType(SessionCreateParams.PaymentMethodType.CARD)
                 .addAllLineItem(lineItems)
                 .putMetadata("orderId", orderId)
-                .setPaymentIntentData(SessionCreateParams.PaymentIntentData.builder().build())
+                .setPaymentIntentData(
+                    SessionCreateParams.PaymentIntentData.builder()
+                        .setCaptureMethod(SessionCreateParams.PaymentIntentData.CaptureMethod.AUTOMATIC)
+                        .build()
+                )
                 .addExpand("payment_intent")
                 .build();
 
         Session session = Session.create(params);
         logger.debug("Stripe Session created with ID: {}, URL: {}", session.getId(), session.getUrl());
 
-        String paymentIntentIdFromSession = null;
-        if (session.getPaymentIntentObject() != null) {
-            paymentIntentIdFromSession = session.getPaymentIntentObject().getId();
-            logger.info("Payment Intent ID from expanded PaymentIntentObject for order ID {}: '{}'", orderId, paymentIntentIdFromSession);
-        } else if (session.getPaymentIntent() != null) {
-            paymentIntentIdFromSession = session.getPaymentIntent();
-            logger.info("Payment Intent ID from session.getPaymentIntent() for order ID {}: '{}'", orderId, paymentIntentIdFromSession);
-        } else {
-            logger.warn("Payment Intent ID is null from both getPaymentIntentObject and getPaymentIntent for order ID {}", orderId);
-        }
-        
-        if (paymentIntentIdFromSession != null && !paymentIntentIdFromSession.isBlank()) {
-            logger.info("Attempting to save PaymentIntentId '{}' to order ID: {}", paymentIntentIdFromSession, order.getId());
-            order.setPaymentIntentId(paymentIntentIdFromSession);
+        String checkoutSessionId = session.getId();
+        if (checkoutSessionId != null && !checkoutSessionId.isBlank()) {
+            logger.info("Attempting to save Stripe Checkout Session ID '{}' to order ID: {}", checkoutSessionId, order.getId());
+            order.setStripeCheckoutSessionId(checkoutSessionId);
             orderRepository.save(order);
-            logger.info("Successfully saved PaymentIntentId '{}' to order ID: {}. Current value in order: '{}'", 
-                paymentIntentIdFromSession, order.getId(), order.getPaymentIntentId());
+            logger.info("Successfully saved Stripe Checkout Session ID '{}' to order ID: {}. Current checkout session ID in order: '{}'", 
+                checkoutSessionId, order.getId(), order.getStripeCheckoutSessionId());
         } else {
-            logger.warn("PaymentIntentId was null or blank from Stripe Session for order ID: {}. Not saving to order.", orderId);
+            logger.warn("Stripe Checkout Session ID was null or blank for order ID: {}. Not saving to order.", orderId);
         }
 
         String stripeCustomerId = session.getCustomer();
@@ -96,8 +92,28 @@ public class StripeService {
         return session.getUrl();
     }
 
-    public void refundPayment(String paymentIntentId, Long amountInCents) throws StripeException {
-        logger.info("Attempting Stripe refund for PaymentIntentId: '{}', Amount: {} cents", paymentIntentId, amountInCents);
+    private String retrievePaymentIntentId(String checkoutSessionId) throws StripeException {
+        logger.debug("Retrieving PaymentIntent ID for Checkout Session ID: \'{}\'", checkoutSessionId);
+        SessionRetrieveParams params = SessionRetrieveParams.builder()
+            .addExpand("payment_intent")
+            .build();
+        Session session = Session.retrieve(checkoutSessionId, params, null);
+        String paymentIntentId = session.getPaymentIntent();
+        if (paymentIntentId == null || paymentIntentId.isBlank()) {
+             logger.error("Could not retrieve PaymentIntent ID from Checkout Session ID: '{}'", checkoutSessionId);
+             throw new RuntimeException("PaymentIntent ID not found for the given Checkout Session ID: " + checkoutSessionId);
+        }
+        logger.info("Retrieved PaymentIntent ID '{}' for Checkout Session ID '{}'", paymentIntentId, checkoutSessionId);
+        return paymentIntentId;
+    }
+
+    public void refundPayment(String checkoutSessionId, Long amountInCents) throws StripeException {
+        logger.info("Attempting Stripe refund for CheckoutSessionId: \'{}\', Amount: {} cents", checkoutSessionId, amountInCents);
+        
+        String paymentIntentId = retrievePaymentIntentId(checkoutSessionId);
+        
+        logger.info("Obtained PaymentIntentId \'{}\' from CheckoutSessionId \'{}\'. Proceeding with refund.", paymentIntentId, checkoutSessionId);
+
         RefundCreateParams.Builder paramsBuilder = RefundCreateParams.builder()
                 .setPaymentIntent(paymentIntentId);
 
@@ -107,17 +123,17 @@ public class StripeService {
 
         try {
             Refund refund = Refund.create(paramsBuilder.build());
-            logger.info("Stripe refund successful. Refund ID: {}, Status: {}, Amount: {}", 
-                refund.getId(), refund.getStatus(), refund.getAmount());
+            logger.info("Stripe refund successful via CheckoutSessionId \'{}\'. Refund ID: {}, Status: {}, Amount: {}", 
+                checkoutSessionId, refund.getId(), refund.getStatus(), refund.getAmount());
         } catch (StripeException e) {
-            logger.error("Stripe API error during refund for PaymentIntentId: '{}'. Amount: {} cents. Stripe Error Code: [{}], Message: {} \n Full Stripe Exception: ", 
-                paymentIntentId, amountInCents, e.getCode(), e.getMessage(), e);
+            logger.error("Stripe API error during refund attempt via CheckoutSessionId \'{}\' (PaymentIntentId: \'{}\'). Amount: {} cents. Stripe Error Code: [{}], Message: {} \\n Full Stripe Exception: ", 
+                checkoutSessionId, paymentIntentId, amountInCents, e.getCode(), e.getMessage(), e);
             throw e;
         }
     }
 
-    public void refundPayment(String paymentIntentId) throws StripeException {
-        logger.info("Attempting FULL Stripe refund for PaymentIntentId: '{}'", paymentIntentId);
-        refundPayment(paymentIntentId, null);
+    public void refundPayment(String checkoutSessionId) throws StripeException {
+        logger.info("Attempting FULL Stripe refund for CheckoutSessionId: \'{}\'", checkoutSessionId);
+        refundPayment(checkoutSessionId, null);
     }
 }
