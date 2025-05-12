@@ -2,6 +2,7 @@ import { Injectable } from '@angular/core';
 import { HttpClient, HttpErrorResponse } from '@angular/common/http';
 import { Observable, catchError, throwError } from 'rxjs';
 import { User } from '../auth/models/auth.model';
+import { Order } from '../models/order.model';
 
 @Injectable({
   providedIn: 'root'
@@ -39,6 +40,14 @@ export class UserService {
       );
   }
 
+  getCurrentUser(): Observable<User> {
+    return this.http.get<User>(`${this.apiUrl}/user/me`);
+  }
+
+  requestSellerStatus(): Observable<any> {
+    return this.http.put(`${this.apiUrl}/user/request-seller-status`, {}, { responseType: 'text' });
+  }
+
   private handleError(error: HttpErrorResponse) {
     if (error.status === 403) {
       console.error('Access denied. Make sure you have the ADMIN role to access this resource.');
@@ -54,6 +63,6 @@ export class UserService {
       errorMsg = `Error Code: ${error.status}, Message: ${error.message}`;
     }
     console.error(errorMsg);
-    return throwError(() => new Error(errorMsg));
+    return throwError(() => new Error('An unexpected error occurred. Please try again later.'));
   }
 }

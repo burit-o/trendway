@@ -9,6 +9,9 @@ import { ProductService } from '../services/product.service';
 import { CategoryService } from '../services/category.service';
 import { AuthService } from '../auth/services/auth.service';
 import { CartService } from '../services/cart.service';
+import { User } from '../auth/models/auth.model';
+import { UserService } from '../services/user.service';
+import { ChangeDetectorRef } from '@angular/core';
 
 @Component({
   selector: 'app-products',
@@ -22,7 +25,7 @@ export class ProductsComponent implements OnInit {
   filteredProducts: Product[] = [];
   categories: Category[] = [];
   isLoggedIn = false;
-  currentUser: any = null;
+  currentUser: User | null = null;
   cartItemCount = 0;
   minPrice: number | null = null;
   maxPrice: number | null = null;
@@ -41,21 +44,28 @@ export class ProductsComponent implements OnInit {
   // Image loading states
   loadingImages: { [key: number]: boolean } = {};
 
+  requestStatusMessage: string | null = null;
+  requestStatusError: boolean = false;
+
   constructor(
     private productService: ProductService,
     private categoryService: CategoryService,
     private authService: AuthService,
     private cartService: CartService,
     private router: Router,
-    private route: ActivatedRoute
+    private route: ActivatedRoute,
+    private userService: UserService,
+    private cdr: ChangeDetectorRef
   ) {}
 
   ngOnInit(): void {
     this.loadCategories();
     this.isLoggedIn = this.authService.isLoggedIn();
-    if (this.isLoggedIn) {
-      this.currentUser = this.authService.currentUserValue;
-    }
+    this.authService.currentUser.subscribe(user => {
+      this.currentUser = user;
+      this.cdr.detectChanges();
+      console.log("Current user in products:", this.currentUser);
+    });
     this.updateCartCount();
 
     // URL'deki query parametrelerini dinle (kategori değişimi için)
@@ -242,6 +252,45 @@ export class ProductsComponent implements OnInit {
       this.loadProducts(+categoryIdFromUrl);
     } else {
     this.loadProducts();
+    }
+  }
+
+  get isCustomer(): boolean {
+    return !!this.currentUser && this.currentUser.role === 'CUSTOMER';
+  }
+
+  requestSellerStatus(): void {
+    if (confirm("Satıcı olmak istediğinize emin misiniz? Talebiniz yönetici onayına gönderilecektir.")) {
+      this.requestStatusMessage = null;
+      this.requestStatusError = false;
+      this.userService.requestSellerStatus().subscribe({
+        next: (response) => {
+          console.log("Seller status request response:", response);
+          this.requestStatusMessage = response || "Satıcı olma talebiniz başarıyla gönderildi.";
+          this.requestStatusError = false;
+          if (this.currentUser) {
+            alert(this.requestStatusMessage);
+          }
+        },
+        error: (error) => {
+          console.error("Error requesting seller status:", error);
+          this.requestStatusMessage = error.error || "Talep gönderilirken bir hata oluştu.";
+          if (typeof error.error === 'string') {
+             this.requestStatusMessage = error.error;
+          } else {
+             this.requestStatusMessage = "Satıcı olma talebi gönderilirken bir hata oluştu. Lütfen tekrar deneyin.";
+          }
+          this.requestStatusError = true;
+          alert(this.requestStatusMessage);
+        },
+        complete: () => {
+            this.cdr.detectChanges();
+            setTimeout(() => {
+                this.requestStatusMessage = null;
+                this.cdr.detectChanges();
+            }, 5000); 
+        }
+      });
     }
   }
 }

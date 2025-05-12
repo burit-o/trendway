@@ -163,13 +163,14 @@
         </div>
       </div>
     </div>
+
   </div>
 
-  <!-- Contact Us Section -->
+  <!-- Footer Section -->
   <footer class="bg-light mt-5 py-5">
     <div class="container">
       <div class="row">
-        <div class="col-md-6">
+        <div class="col-md-4">
           <h4>Contact Us</h4>
           <p>Have questions? We're here to help!</p>
           <ul class="list-unstyled">
@@ -178,10 +179,19 @@
             <li><i class="bi bi-geo-alt me-2"></i> Pınarbaşı mah. Teknokent AR-GE 2, Antalya, Konyaaltı</li>
           </ul>
         </div>
-        <div class="col-md-6">
+        <div class="col-md-4">
           <h4>Follow Us</h4>
           <div class="social-links">
             <a href="https://www.instagram.com/salihcimen_01/" class="me-3"><i class="bi bi-instagram"></i></a>
+          </div>
+        </div>
+        <div class="col-md-4" *ngIf="isCustomer">
+          <h5 class="text-uppercase">Become a Seller</h5>
+          <p class="small">Want to sell your products on Trendway?</p>
+          <button class="btn btn-outline-dark mt-2" (click)="requestSellerStatus()">Request Seller Status</button>
+          <div *ngIf="requestStatusMessage" class="mt-2 alert alert-sm" 
+               [ngClass]="{'alert-success': !requestStatusError, 'alert-danger': requestStatusError}">
+            {{ requestStatusMessage }}
           </div>
         </div>
       </div>
