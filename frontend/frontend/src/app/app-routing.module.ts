@@ -13,6 +13,7 @@ import { SellerProductsComponent } from './seller-dashboard/seller-products/sell
 import { SellerOrdersComponent } from './seller-dashboard/seller-orders/seller-orders.component';
 import { RefundRequestsComponent } from './refund-requests/refund-requests.component';
 import { AdminDashboardComponent } from './admin-dashboard/admin-dashboard.component';
+import { UserManagementComponent } from './admin-dashboard/user-management/user-management.component';
 
 const routes: Routes = [
   {
@@ -68,7 +69,11 @@ const routes: Routes = [
     path: 'panel',
     component: AdminDashboardComponent,
     canActivate: [AuthGuard, RoleGuard],
-    data: { expectedRole: 'ADMIN' }
+    data: { expectedRole: 'ADMIN' },
+    children: [
+      { path: '', redirectTo: 'users', pathMatch: 'full' },
+      { path: 'users', component: UserManagementComponent }
+    ]
   },
   {
     path: 'refund-requests',

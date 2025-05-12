@@ -47,6 +47,7 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.GET, "/api/reviews/product/{productId}").permitAll()
                         .requestMatchers("/api/categories/public/**").permitAll()
                         .requestMatchers("/api/payment/webhook").permitAll()
+                        .requestMatchers("/api/admin/**").hasRole("ADMIN")
                         .requestMatchers("/api/categories/add").hasRole("ADMIN")
                         .requestMatchers("/api/categories/delete/**").hasRole("ADMIN")
                         .requestMatchers("/api/cart/**").hasRole("CUSTOMER")

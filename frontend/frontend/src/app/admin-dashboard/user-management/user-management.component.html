@@ -1,0 +1,82 @@
+<div class="container">
+  <h2 class="mb-4">User Management</h2>
+  
+  <div *ngIf="!isAdmin" class="alert alert-danger">
+    <strong>Access Denied!</strong> You need administrator privileges to view this page.
+    <div class="mt-2">You will be redirected to the main page shortly...</div>
+  </div>
+  
+  <div *ngIf="loading" class="text-center my-5">
+    <div class="spinner-border" role="status">
+      <span class="visually-hidden">Loading...</span>
+    </div>
+  </div>
+  
+  <div *ngIf="error" class="alert alert-danger">
+    <strong>Error:</strong> {{ error }}
+  </div>
+
+  <!-- Debug info -->
+  <div *ngIf="authService.currentUserValue" class="alert alert-info mb-3">
+    <h5>Debug Info</h5>
+    <p><strong>Current User Role:</strong> {{ authService.currentUserValue.role }}</p>
+    <p><strong>Is Admin:</strong> {{ isAdmin }}</p>
+    <p><strong>Token Present:</strong> {{ authService.getToken() ? 'Yes' : 'No' }}</p>
+  </div>
+  
+  <div *ngIf="!loading && !error && users.length === 0 && isAdmin" class="alert alert-info">
+    No users found.
+  </div>
+  
+  <div *ngIf="users.length > 0" class="table-responsive">
+    <table class="table table-striped table-hover">
+      <thead class="table-dark">
+        <tr>
+          <th scope="col">ID</th>
+          <th scope="col">Name</th>
+          <th scope="col">Email</th>
+          <th scope="col">Role</th>
+          <th scope="col">Phone</th>
+          <th scope="col">Address</th>
+          <th scope="col">Status</th>
+          <th scope="col">Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr *ngFor="let user of users">
+          <td>{{ user.id }}</td>
+          <td>{{ user.firstName }} {{ user.lastName }}</td>
+          <td>{{ user.email }}</td>
+          <td>
+            <span class="badge bg-info">{{ user.role }}</span>
+          </td>
+          <td>{{ user.address?.contactPhone || 'Not available' }}</td>
+          <td>
+            <div *ngIf="user.address; else noAddress">
+              {{ user.address.street }}, {{ user.address.city }}, 
+              {{ user.address.zipCode }}, {{ user.address.country }}
+            </div>
+            <ng-template #noAddress>
+              <i>No address available</i>
+            </ng-template>
+          </td>
+          <td>
+            <span 
+              class="badge" 
+              [ngClass]="{'bg-success': user.status === 'active', 'bg-danger': user.status === 'banned'}">
+              {{ user.status }}
+            </span>
+          </td>
+          <td>
+            <button 
+              class="btn btn-sm" 
+              [ngClass]="{'btn-danger': user.status === 'active', 'btn-success': user.status === 'banned'}"
+              (click)="toggleUserBan(user)">
+              {{ user.status === 'banned' ? 'Unban' : 'Ban' }}
+            </button>
+          </td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+</div> 
