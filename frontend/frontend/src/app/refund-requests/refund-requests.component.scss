@@ -1,0 +1,64 @@
+.modal-backdrop {
+  opacity: 0.5;
+}
+
+.modal.d-block {
+  overflow-y: auto;
+}
+
+.table {
+  vertical-align: middle;
+}
+
+tr:hover {
+  background-color: rgba(0, 0, 0, 0.02);
+}
+
+.btn-group .btn {
+  transition: all 0.2s;
+}
+
+.btn-group .btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+}
+
+/* Mobil uyumlu tablo düzenleri */
+@media (max-width: 992px) {
+  .table-responsive {
+    border: 0;
+  }
+  
+  .table thead {
+    display: none;
+  }
+  
+  .table tr {
+    margin-bottom: 10px;
+    display: block;
+    border: 1px solid #ddd;
+    border-radius: 5px;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+  }
+  
+  .table td {
+    display: block;
+    text-align: right;
+    padding: 10px;
+    position: relative;
+    border-bottom: 1px solid #eee;
+  }
+  
+  .table td::before {
+    content: attr(data-label);
+    position: absolute;
+    left: 10px;
+    width: 50%;
+    font-weight: bold;
+    text-align: left;
+  }
+  
+  .table td:last-child {
+    border-bottom: 0;
+  }
+}

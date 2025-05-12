@@ -94,7 +94,10 @@
                         </td>
                         <td>
                           <!-- TODO: OrderItem durumunu değiştirme ve iptal etme butonları/arayüzü buraya gelecek -->
-                          <button class="btn btn-sm btn-outline-secondary me-1" title="Change Item Status" (click)="openChangeItemStatusModal(order, item)">Change Status</button>
+                          <button class="btn btn-sm btn-outline-secondary me-1" 
+                                  title="Change Item Status" 
+                                  (click)="openChangeItemStatusModal(order, item)"
+                                  [disabled]="item.status === orderItemStatus.DELIVERED || item.status === orderItemStatus.CANCELED || item.status === orderItemStatus.CANCELLED_BY_SELLER">Change Status</button>
                           <button class="btn btn-sm btn-outline-danger" 
                                   title="Cancel Item" 
                                   (click)="promptCancelOrderItem(item, order.id)" 
@@ -114,3 +117,13 @@
     </div>
   </div>
 </div> 
+
+<!-- Change Item Status Modal -->
+<app-change-item-status-modal 
+  *ngIf="isChangeStatusModalVisible && selectedItemForStatusChange && selectedOrderForStatusChange"
+  [isVisible]="isChangeStatusModalVisible"
+  [item]="selectedItemForStatusChange"
+  [order]="selectedOrderForStatusChange"
+  (closeModal)="handleCloseChangeStatusModal()"
+  (saveStatus)="handleSaveItemStatus($event)">
+</app-change-item-status-modal> 

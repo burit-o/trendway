@@ -1,13 +1,17 @@
 package com.ecommerce.backend.controller;
 
 import com.ecommerce.backend.model.Order;
+import com.ecommerce.backend.model.OrderItem;
 import com.ecommerce.backend.model.OrderItemStatus;
 import com.ecommerce.backend.model.OrderStatus;
+import com.ecommerce.backend.model.RefundStatus;
 import com.ecommerce.backend.model.User;
 import com.ecommerce.backend.repository.UserRepository;
 import com.ecommerce.backend.service.OrderService;
 import com.ecommerce.backend.service.StripeService;
 import com.ecommerce.backend.dto.OrderDto;
+import com.ecommerce.backend.dto.OrderItemDto;
+import com.ecommerce.backend.dto.RefundRequestDto;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.RequiredArgsConstructor;
 
@@ -19,6 +23,7 @@ import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.security.Principal;
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -226,6 +231,101 @@ public class OrderController {
             logger.error("Failed to fetch orders for seller {}: {}", principal.getName(), e.getMessage(), e);
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                     .body("Failed to fetch orders: " + e.getMessage());
+        }
+    }
+
+    // Müşteri iade talebi oluşturur
+    @PostMapping("/{orderId}/request-refund")
+    @PreAuthorize("hasAnyRole('CUSTOMER', 'USER')")
+    public ResponseEntity<?> requestRefund(
+            @PathVariable Long orderId,
+            @RequestBody RefundRequestDto refundRequest,
+            Principal principal) {
+        try {
+            String userEmail = principal.getName();
+            User user = userRepository.findByEmail(userEmail)
+                    .orElseThrow(() -> new RuntimeException("User not found"));
+            
+            OrderItem orderItem = orderService.requestRefund(orderId, refundRequest.getOrderItemId(), 
+                                                           refundRequest.getReason(), user.getId());
+            
+            return ResponseEntity.ok(OrderItemDto.fromEntity(orderItem));
+        } catch (SecurityException e) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).body(e.getMessage());
+        } catch (IllegalStateException e) {
+            return ResponseEntity.status(HttpStatus.CONFLICT).body(e.getMessage());
+        } catch (Exception e) {
+            logger.error("Refund request failed: {}", e.getMessage(), e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body("İade talebi işleme alınamadı: " + e.getMessage());
+        }
+    }
+    
+    // Satıcı bekleyen iade taleplerini listeler
+    @GetMapping("/refund-requests/by-seller")
+    @PreAuthorize("hasRole('SELLER')")
+    public ResponseEntity<?> getRefundRequestsBySeller(Principal principal) {
+        try {
+            User seller = userRepository.findByEmail(principal.getName())
+                    .orElseThrow(() -> new RuntimeException("Seller not found"));
+            
+            List<OrderItem> refundRequests = orderService.getRefundRequestsBySeller(seller.getId());
+            List<OrderItemDto> refundRequestDtos = refundRequests.stream()
+                    .map(OrderItemDto::fromEntity)
+                    .collect(Collectors.toList());
+            
+            return ResponseEntity.ok(refundRequestDtos);
+        } catch (Exception e) {
+            logger.error("Failed to fetch refund requests: {}", e.getMessage(), e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body("İade talepleri alınamadı: " + e.getMessage());
+        }
+    }
+    
+    // Satıcı iade talebini onaylar
+    @PutMapping("/refund-requests/{orderItemId}/approve")
+    @PreAuthorize("hasRole('SELLER')")
+    public ResponseEntity<?> approveRefundRequest(
+            @PathVariable Long orderItemId,
+            Principal principal) {
+        try {
+            User seller = userRepository.findByEmail(principal.getName())
+                    .orElseThrow(() -> new RuntimeException("Seller not found"));
+            
+            OrderItem orderItem = orderService.approveRefundRequest(orderItemId, seller.getId());
+            return ResponseEntity.ok(OrderItemDto.fromEntity(orderItem));
+        } catch (SecurityException e) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).body(e.getMessage());
+        } catch (IllegalStateException e) {
+            return ResponseEntity.status(HttpStatus.CONFLICT).body(e.getMessage());
+        } catch (Exception e) {
+            logger.error("Failed to approve refund request: {}", e.getMessage(), e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body("İade talebi onaylanamadı: " + e.getMessage());
+        }
+    }
+    
+    // Satıcı iade talebini reddeder
+    @PutMapping("/refund-requests/{orderItemId}/reject")
+    @PreAuthorize("hasRole('SELLER')")
+    public ResponseEntity<?> rejectRefundRequest(
+            @PathVariable Long orderItemId,
+            @RequestParam String rejectionReason,
+            Principal principal) {
+        try {
+            User seller = userRepository.findByEmail(principal.getName())
+                    .orElseThrow(() -> new RuntimeException("Seller not found"));
+            
+            OrderItem orderItem = orderService.rejectRefundRequest(orderItemId, rejectionReason, seller.getId());
+            return ResponseEntity.ok(OrderItemDto.fromEntity(orderItem));
+        } catch (SecurityException e) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).body(e.getMessage());
+        } catch (IllegalStateException e) {
+            return ResponseEntity.status(HttpStatus.CONFLICT).body(e.getMessage());
+        } catch (Exception e) {
+            logger.error("Failed to reject refund request: {}", e.getMessage(), e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body("İade talebi reddedilemedi: " + e.getMessage());
         }
     }
 }

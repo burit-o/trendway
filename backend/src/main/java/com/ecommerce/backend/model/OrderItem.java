@@ -5,6 +5,8 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import jakarta.persistence.*;
 import lombok.*;
 
+import java.time.LocalDateTime;
+
 @Entity
 @Table(name = "order_items")
 @Getter
@@ -33,6 +35,16 @@ public class OrderItem {
     @ManyToOne(fetch = FetchType.LAZY)
     @JsonIgnore
     private Order order;
+    
+    // İade ile ilgili yeni alanlar
+    @Enumerated(EnumType.STRING)
+    private RefundStatus refundStatus;
+    
+    private String refundReason;
+    
+    private LocalDateTime refundRequestedAt;
+    
+    private LocalDateTime refundProcessedAt;
 
     @JsonProperty("productName")
     public String getProductName() {

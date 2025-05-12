@@ -8,4 +8,5 @@ public enum OrderStatus {
     RETURN_REQUESTED,
     RETURNED,
     EXCHANGE_REQUESTED,
+    REFUNDED        // İade edildi (tüm sipariş iade edildi)
 }
