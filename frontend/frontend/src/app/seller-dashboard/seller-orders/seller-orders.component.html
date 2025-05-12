@@ -101,7 +101,7 @@
                           <button class="btn btn-sm btn-outline-danger" 
                                   title="Cancel Item" 
                                   (click)="promptCancelOrderItem(item, order.id)" 
-                                  [disabled]="item.status === orderItemStatus.DELIVERED || item.status === orderItemStatus.CANCELED || item.status === orderItemStatus.CANCELLED_BY_SELLER || item.status === orderItemStatus.SHIPPED">
+                                  [disabled]="item.status === orderItemStatus.DELIVERED || item.status === orderItemStatus.CANCELED || item.status === orderItemStatus.CANCELLED_BY_SELLER">
                             Cancel Item
                           </button>
                         </td>
