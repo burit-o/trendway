@@ -224,13 +224,13 @@ public class OrderService {
     }
 
     @Transactional
-    public OrderItem cancelOrderItemBySeller(Long orderItemId, String sellerEmail) {
-        logger.info("Attempting to cancel order item ID: {} by seller: {}", orderItemId, sellerEmail);
+    public OrderItem cancelOrderItemBySeller(Long orderItemId, String userEmail) {
+        logger.info("Attempting to cancel order item ID: {} by user: {}", orderItemId, userEmail);
 
-        User seller = userRepository.findByEmail(sellerEmail)
+        User user = userRepository.findByEmail(userEmail)
                 .orElseThrow(() -> {
-                    logger.error("Seller not found with email: {}", sellerEmail);
-                    return new RuntimeException("Seller not found with email: " + sellerEmail);
+                    logger.error("User not found with email: {}", userEmail);
+                    return new RuntimeException("User not found with email: " + userEmail);
                 });
 
         OrderItem orderItem = orderItemRepository.findById(orderItemId)
@@ -257,10 +257,14 @@ public class OrderService {
             throw new RuntimeException("Product or product seller information is missing for the order item.");
         }
 
-        if (!product.getSeller().getId().equals(seller.getId())) {
-            logger.warn("Unauthorized attempt to cancel order item ID: {} by seller ID: {}. Product seller ID: {}", 
-                orderItemId, seller.getId(), product.getSeller().getId());
-            throw new SecurityException("You are not authorized to cancel this order item as you are not the seller of the product.");
+        // ADMIN rolü kontrolü ekle
+        boolean isAdmin = user.getRole() == Role.ADMIN;
+        boolean isSeller = product.getSeller().getId().equals(user.getId());
+        
+        if (!isAdmin && !isSeller) {
+            logger.warn("Unauthorized attempt to cancel order item ID: {} by user ID: {}. Product seller ID: {}", 
+                orderItemId, user.getId(), product.getSeller().getId());
+            throw new SecurityException("You are not authorized to cancel this order item as you are not the seller of the product or an admin.");
         }
 
         if (orderItem.getStatus() == OrderItemStatus.DELIVERED) {

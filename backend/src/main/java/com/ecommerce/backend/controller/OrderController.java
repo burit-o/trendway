@@ -177,7 +177,7 @@ public class OrderController {
     }
 
     @PutMapping("/item/{orderItemId}/cancel-by-seller")
-    @PreAuthorize("hasRole('SELLER')")
+    @PreAuthorize("hasRole('SELLER') or hasRole('ADMIN')")
     public ResponseEntity<?> cancelOrderItemBySeller(
             @PathVariable Long orderItemId,
             Principal principal) {

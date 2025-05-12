@@ -1,0 +1,34 @@
+<div class="modal-backdrop" [style.display]="isVisible ? 'block' : 'none'" (click)="onBackdropClick($event)">
+  <div class="modal" tabindex="-1" role="dialog" [style.display]="isVisible ? 'block' : 'none'">
+    <div class="modal-dialog modal-dialog-centered" role="document">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title">Ürün Durumu Değiştir: {{ item.productName }} (Sipariş #{{ order.id }})</h5>
+          <button type="button" class="btn-close" aria-label="Close" (click)="onClose()"></button>
+        </div>
+        <div class="modal-body">
+          <p>Mevcut Durum: <strong>{{ getStatusTranslation(item.status) }}</strong></p>
+          <form [formGroup]="statusForm" (ngSubmit)="onSubmit()">
+            <div class="mb-3">
+              <label for="newStatus" class="form-label">Yeni Durum:</label>
+              <select id="newStatus" class="form-select" formControlName="newStatus">
+                <option value="" disabled>Durum seçiniz</option>
+                <option *ngFor="let status of statusOptions" [value]="status">
+                  {{ getStatusTranslation(status) }}
+                </option>
+              </select>
+              <div *ngIf="statusForm.get('newStatus')?.invalid && statusForm.get('newStatus')?.touched" class="invalid-feedback d-block">
+                Lütfen yeni bir durum seçiniz.
+              </div>
+            </div>
+            
+            <div class="modal-footer mt-4">
+              <button type="button" class="btn btn-outline-secondary me-2" (click)="onClose()">İptal</button>
+              <button type="submit" class="btn btn-primary" [disabled]="statusForm.invalid">Kaydet</button>
+            </div>
+          </form>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
