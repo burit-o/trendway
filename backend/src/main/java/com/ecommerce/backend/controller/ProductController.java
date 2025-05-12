@@ -34,14 +34,13 @@ public class ProductController {
         return ResponseEntity.ok(products);
     }
 
-    @PostMapping("/add/{sellerId}/{categoryId}")
+    @PostMapping("/add/{sellerId}")
     @PreAuthorize("hasRole('SELLER')")
     public ResponseEntity<Product> addProduct(
             @RequestBody Product product,
-            @PathVariable Long sellerId,
-            @PathVariable Long categoryId
+            @PathVariable Long sellerId
     ) {
-        return ResponseEntity.ok(productService.addProduct(product, sellerId, categoryId));
+        return ResponseEntity.ok(productService.addProduct(product, sellerId));
     }
 
     @PutMapping("/deactivate/{id}")

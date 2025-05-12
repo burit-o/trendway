@@ -38,20 +38,25 @@ public class ProductService {
         return productRepository.findByCategoryId(categoryId);
     }
 
-    public Product addProduct(Product product, Long sellerId, Long categoryId) {
+    public Product addProduct(Product product, Long sellerId) {
         User seller = userRepository.findById(sellerId)
                 .orElseThrow(() -> new RuntimeException("Seller not found"));
 
-        if (!seller.getRole().name().equals("SELLER")) {
+        if (seller.getRole() != Role.SELLER) {
             throw new RuntimeException("Only sellers can add products");
         }
 
-        Category category = categoryRepository.findById(categoryId)
-                .orElseThrow(() -> new RuntimeException("Category not found"));
+        if (product.getCategory() == null || product.getCategory().getId() == null) {
+            throw new RuntimeException("Category ID must be provided within the product object");
+        }
+        Category category = categoryRepository.findById(product.getCategory().getId())
+                .orElseThrow(() -> new RuntimeException("Category not found: " + product.getCategory().getId()));
 
         product.setSeller(seller);
         product.setCategory(category);
         product.setActive(true);
+        product.setDeletedByAdmin(false);
+        product.setId(null);
 
         return productRepository.save(product);
     }

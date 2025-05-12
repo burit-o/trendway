@@ -7,7 +7,7 @@ export interface Product {
     imageUrls: string[];
     category: {
         id: number;
-        name: string;
+        name?: string;
     };
     averageRating: number;
     reviewCount: number;

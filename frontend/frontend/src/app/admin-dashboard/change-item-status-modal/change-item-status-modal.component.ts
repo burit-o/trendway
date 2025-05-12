@@ -1,6 +1,6 @@
 import { Component, EventEmitter, Input, OnInit, Output } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { ReactiveFormsModule, FormBuilder, FormGroup, Validators } from '@angular/forms';
+import { FormsModule } from '@angular/forms';
 import { Order, OrderItem } from '../../models/order.model';
 
 // Backend'deki OrderItemStatus enum'ının string karşılıkları
@@ -16,7 +16,7 @@ export const ORDER_ITEM_STATUSES = [
 @Component({
   selector: 'app-change-item-status-modal',
   standalone: true,
-  imports: [CommonModule, ReactiveFormsModule],
+  imports: [CommonModule, FormsModule],
   templateUrl: './change-item-status-modal.component.html',
   styleUrls: ['./change-item-status-modal.component.scss']
 })
@@ -28,56 +28,42 @@ export class ChangeItemStatusModalComponent implements OnInit {
   @Output() saveStatus = new EventEmitter<{ itemId: number, newStatus: string }>();
   @Output() closeModal = new EventEmitter<void>();
 
-  statusForm: FormGroup;
-  statusOptions: string[] = ORDER_ITEM_STATUSES;
+  availableStatuses: string[] = ORDER_ITEM_STATUSES;
+  newStatus: string = '';
 
-  constructor(private fb: FormBuilder) {
-    this.statusForm = this.fb.group({
-      newStatus: ['', Validators.required]
-    });
-  }
+  constructor() {}
 
   ngOnInit(): void {
     if (this.item) {
-      this.statusForm.patchValue({ newStatus: this.item.status });
+      this.newStatus = this.item.status;
     }
   }
 
-  // Modal dışına tıklandığında kapatmak için
   onBackdropClick(event: MouseEvent): void {
-    // Sadece backdrop'a tıklandıysa kapat (modal içeriği değil)
     if ((event.target as HTMLElement).classList.contains('modal-backdrop')) {
       this.onClose();
     }
   }
   
-  onSubmit(): void {
-    console.log('Form submitted:', this.statusForm);
-    console.log('Form validity:', this.statusForm.valid);
-    console.log('Form value:', this.statusForm.value);
+  onSave(): void {
+    console.log('Save button clicked. New status:', this.newStatus);
     console.log('Item ID:', this.item?.id);
     
-    if (this.statusForm.valid && this.item && this.item.id) {
+    if (this.newStatus && this.item && this.item.id && this.newStatus !== this.item.status) {
       const payload = { 
         itemId: this.item.id, 
-        newStatus: this.statusForm.value.newStatus 
+        newStatus: this.newStatus
       };
       
       console.log('Emitting saveStatus event with payload:', payload);
       this.saveStatus.emit(payload);
     } else {
-      console.error('Form is invalid or item is missing ID:', {
-        formValid: this.statusForm.valid,
+      console.error('Cannot save: New status is empty, item is missing, item ID is missing, or status has not changed.', {
+        newStatus: this.newStatus,
         itemExists: !!this.item,
-        itemId: this.item?.id
+        itemId: this.item?.id,
+        statusChanged: this.newStatus !== this.item?.status
       });
-      
-      if (this.statusForm.invalid) {
-        Object.keys(this.statusForm.controls).forEach(key => {
-          const control = this.statusForm.get(key);
-          console.error(`Control ${key} errors:`, control?.errors);
-        });
-      }
     }
   }
 
