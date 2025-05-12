@@ -63,6 +63,12 @@ export class OrderService {
   cancelOrderItemBySeller(orderItemId: number): Observable<OrderItem> { // Backend OrderItem döndürüyor -> Frontend OrderItem modeli ile değiştirildi
     return this.http.put<OrderItem>(`${this.apiUrl}/item/${orderItemId}/cancel-by-seller`, {}); // Frontend OrderItem modeli ile değiştirildi
   }
+  
+  // Admin'in bir sipariş kalemini iptal etmesi
+  cancelOrderItemByAdmin(orderItemId: number): Observable<OrderItem> {
+    // Yeni endpoint'i kullanıyoruz
+    return this.http.put<OrderItem>(`${this.apiUrl}/item/${orderItemId}/cancel-by-admin`, {});
+  }
 
   // Müşterinin bir sipariş için iade talebinde bulunması (updated)
   requestRefundForOrderItem(orderId: number, orderItemId: number, reason: string): Observable<OrderItem> {
@@ -96,5 +102,11 @@ export class OrderService {
     });
   }
   
-  // TODO: Gelecekte sipariş oluşturma, iptal etme gibi fonksiyonlar eklenebilir.
+  // Admin'in tüm siparişi iptal etmesi
+  cancelOrderByAdmin(orderId: number): Observable<string> {
+    return this.http.put(`${this.apiUrl}/cancel`, null, {
+      params: { orderId: orderId.toString() },
+      responseType: 'text'
+    });
+  }
 } 

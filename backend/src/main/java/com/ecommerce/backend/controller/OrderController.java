@@ -194,6 +194,24 @@ public class OrderController {
         }
     }
 
+    @PutMapping("/item/{orderItemId}/cancel-by-admin")
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<?> cancelOrderItemByAdmin(
+            @PathVariable Long orderItemId,
+            Principal principal) {
+        try {
+            String adminEmail = principal.getName();
+            com.ecommerce.backend.model.OrderItem updatedOrderItem = orderService.cancelOrderItemByAdmin(orderItemId, adminEmail);
+            return ResponseEntity.ok(updatedOrderItem);
+        } catch (IllegalStateException e) {
+            return ResponseEntity.status(HttpStatus.CONFLICT).body(e.getMessage()); 
+        } catch (SecurityException e) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).body(e.getMessage());
+        } catch (RuntimeException e) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(e.getMessage());
+        }
+    }
+
     @GetMapping("/check-purchase")
     @PreAuthorize("hasRole('CUSTOMER')")
     public ResponseEntity<Boolean> checkPurchase(

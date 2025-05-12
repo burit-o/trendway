@@ -7,5 +7,6 @@ public enum OrderItemStatus {
     EXCHANGED,      // Değiştirildi
     CANCELLED,      // Müşteri tarafından iptal edildi (varsayım)
     CANCELLED_BY_SELLER, // Satıcı tarafından iptal edildi (yeni)
+    CANCELLED_BY_ADMIN,  // Admin tarafından iptal edildi
     REFUNDED        // İade edildi (iade tamamlandı)
 }

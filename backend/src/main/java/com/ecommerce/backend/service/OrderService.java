@@ -163,7 +163,8 @@ public class OrderService {
         // Tüm ürünler iptal edilmiş mi kontrol et
         boolean allItemsCancelled = order.getItems().stream()
             .allMatch(item -> item.getStatus() == OrderItemStatus.CANCELLED || 
-                               item.getStatus() == OrderItemStatus.CANCELLED_BY_SELLER);
+                               item.getStatus() == OrderItemStatus.CANCELLED_BY_SELLER ||
+                               item.getStatus() == OrderItemStatus.CANCELLED_BY_ADMIN);
         
         if (allItemsCancelled) {
             order.setStatus(OrderStatus.CANCELLED);
@@ -175,12 +176,14 @@ public class OrderService {
         boolean allDelivered = order.getItems().stream()
                 .filter(item -> item.getStatus() != OrderItemStatus.CANCELLED && 
                                item.getStatus() != OrderItemStatus.CANCELLED_BY_SELLER &&
+                               item.getStatus() != OrderItemStatus.CANCELLED_BY_ADMIN &&
                                item.getStatus() != OrderItemStatus.REFUNDED)
                 .allMatch(item -> item.getStatus() == OrderItemStatus.DELIVERED);
                 
         boolean allShipped = order.getItems().stream()
                 .filter(item -> item.getStatus() != OrderItemStatus.CANCELLED && 
                                item.getStatus() != OrderItemStatus.CANCELLED_BY_SELLER &&
+                               item.getStatus() != OrderItemStatus.CANCELLED_BY_ADMIN &&
                                item.getStatus() != OrderItemStatus.REFUNDED)
                 .allMatch(item -> item.getStatus() == OrderItemStatus.SHIPPED || item.getStatus() == OrderItemStatus.DELIVERED);
 
@@ -195,6 +198,7 @@ public class OrderService {
             boolean anyPreparing = order.getItems().stream()
                 .filter(item -> item.getStatus() != OrderItemStatus.CANCELLED && 
                                item.getStatus() != OrderItemStatus.CANCELLED_BY_SELLER &&
+                               item.getStatus() != OrderItemStatus.CANCELLED_BY_ADMIN &&
                                item.getStatus() != OrderItemStatus.REFUNDED)
                 .anyMatch(item -> item.getStatus() == OrderItemStatus.PREPARING);
                 
@@ -313,6 +317,100 @@ public class OrderService {
         orderItem.setStatus(OrderItemStatus.CANCELLED_BY_SELLER);
         OrderItem updatedOrderItem = orderItemRepository.save(orderItem);
         logger.info("Order item ID: {} status updated to CANCELLED_BY_SELLER.", orderItemId);
+
+        // Siparişin genel durumunu güncelle
+        updateOverallOrderStatus(orderItem.getOrder());
+
+        return updatedOrderItem;
+    }
+
+    @Transactional
+    public OrderItem cancelOrderItemByAdmin(Long orderItemId, String userEmail) {
+        logger.info("Attempting to cancel order item ID: {} by admin: {}", orderItemId, userEmail);
+
+        User user = userRepository.findByEmail(userEmail)
+                .orElseThrow(() -> {
+                    logger.error("User not found with email: {}", userEmail);
+                    return new RuntimeException("User not found with email: " + userEmail);
+                });
+
+        // Admin rolünü kontrol et
+        if (user.getRole() != Role.ADMIN) {
+            logger.error("Non-admin user attempted to cancel order as admin: {}", userEmail);
+            throw new SecurityException("Only administrators can cancel orders using this method.");
+        }
+
+        OrderItem orderItem = orderItemRepository.findById(orderItemId)
+                .orElseThrow(() -> {
+                    logger.error("Order item not found with ID: {}", orderItemId);
+                    return new RuntimeException("Order item not found with ID: " + orderItemId);
+                });
+
+        Order order = orderItem.getOrder();
+        if (order == null) {
+            logger.error("Order information is missing for order item ID: {}", orderItemId);
+            throw new RuntimeException("Order information is missing for the order item.");
+        }
+        logger.info("Order ID for item {} is {}. Current PaymentIntentId: '{}'", orderItemId, order.getId(), order.getPaymentIntentId());
+
+        // İade öncesi siparişin en güncel halini DB'den çek
+        Order freshOrder = orderRepository.findById(order.getId()).orElse(order);
+        String paymentIntentId = freshOrder.getPaymentIntentId();
+        logger.info("Fresh PaymentIntentId from DB for order {}: '{}'", freshOrder.getId(), paymentIntentId);
+
+        Product product = orderItem.getProduct();
+        if (product == null) {
+            logger.error("Product information is missing for order item ID: {}", orderItemId);
+            throw new RuntimeException("Product information is missing for the order item.");
+        }
+
+        if (orderItem.getStatus() == OrderItemStatus.DELIVERED) {
+            logger.warn("Attempt to cancel already DELIVERED order item ID: {}", orderItemId);
+            throw new IllegalStateException("Delivered order items cannot be cancelled.");
+        }
+
+        if (orderItem.getStatus() == OrderItemStatus.CANCELLED || 
+            orderItem.getStatus() == OrderItemStatus.CANCELLED_BY_SELLER || 
+            orderItem.getStatus() == OrderItemStatus.CANCELLED_BY_ADMIN) {
+            logger.warn("Attempt to cancel already CANCELLED order item ID: {}", orderItemId);
+            throw new IllegalStateException("Order item is already cancelled.");
+        }
+
+        // Stripe üzerinden ödeme iadesi yap
+        if (paymentIntentId != null && !paymentIntentId.isBlank()) {
+            try {
+                // İade edilecek tutarı hesapla: iptal edilen ürünün fiyatı * miktarı
+                long amountToRefundCents = (long) (orderItem.getPriceAtPurchase() * orderItem.getQuantity() * 100);
+                logger.info("Attempting to refund {} cents for order item ID {} (Order ID: {}, PaymentIntentId: '{}')", 
+                    amountToRefundCents, orderItemId, freshOrder.getId(), paymentIntentId);
+                
+                stripeService.refundPayment(paymentIntentId, amountToRefundCents);
+                
+                logger.info("Refund processed successfully by StripeService for order item ID: {}. Amount: {} cents", orderItemId, amountToRefundCents);
+
+            } catch (StripeException e) {
+                // İade başarısız olursa logla ve devam et
+                logger.error("Stripe refund failed for order item ID: {}. PaymentIntentId: '{}'. Error: {}", 
+                    orderItemId, paymentIntentId, e.getMessage());
+            } catch (Exception e) {
+                logger.error("An unexpected error occurred during refund for order item ID: {}. PaymentIntentId: '{}'. Error: {}", 
+                    orderItemId, paymentIntentId, e.getMessage(), e);
+            }
+        } else {
+            logger.warn("PaymentIntentId is null or blank for order ID: {}. Skipping refund for order item ID: {}.", 
+                freshOrder.getId(), orderItemId);
+        }
+        
+        // Stoğu geri ekle
+        logger.info("Restocking product ID: {} by quantity: {} for cancelled order item ID: {}", 
+            product.getId(), orderItem.getQuantity(), orderItemId);
+        product.setStock(product.getStock() + orderItem.getQuantity());
+        productRepository.save(product);
+
+        // Admin tarafından iptal edildi durumu
+        orderItem.setStatus(OrderItemStatus.CANCELLED_BY_ADMIN);
+        OrderItem updatedOrderItem = orderItemRepository.save(orderItem);
+        logger.info("Order item ID: {} status updated to CANCELLED_BY_ADMIN by {}", orderItemId, userEmail);
 
         // Siparişin genel durumunu güncelle
         updateOverallOrderStatus(orderItem.getOrder());

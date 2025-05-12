@@ -129,9 +129,9 @@ export class OrderManagementComponent implements OnInit {
     if (confirmCancel) {
       this.loading = true; 
       const itemId = item.id;
-      this.orderService.cancelOrderItemBySeller(itemId).subscribe({
+      this.orderService.cancelOrderItemByAdmin(itemId).subscribe({
         next: (updatedItem) => {
-          console.log('Item cancelled successfully:', updatedItem);
+          console.log('Item cancelled successfully by admin:', updatedItem);
           this.loading = false;
           this.loadAllOrders();
         },
@@ -165,7 +165,8 @@ export class OrderManagementComponent implements OnInit {
       case 'DELIVERED': return 'bg-success';
       case 'CANCELLED': 
       case 'CANCELED': 
-      case 'CANCELLED_BY_SELLER': return 'bg-danger';
+      case 'CANCELLED_BY_SELLER':
+      case 'CANCELLED_BY_ADMIN': return 'bg-danger';
       case 'REFUNDED': return 'bg-warning text-dark';
       case 'EXCHANGE_REQUESTED': 
       case 'RETURN_REQUESTED': return 'bg-warning text-dark';
