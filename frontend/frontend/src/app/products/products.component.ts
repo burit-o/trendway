@@ -145,7 +145,9 @@ export class ProductsComponent implements OnInit {
 
     const categoryIdFromUrl = this.route.snapshot.queryParams['categoryId'];
     if (categoryIdFromUrl) {
-      tempProducts = tempProducts.filter(p => p.category?.id === +categoryIdFromUrl);
+      tempProducts = tempProducts.filter(p => p.category?.id === +categoryIdFromUrl && p.active);
+    } else {
+      tempProducts = tempProducts.filter(p => p.active);
     }
 
     if (this.minPrice !== null || this.maxPrice !== null) {
@@ -155,7 +157,7 @@ export class ProductsComponent implements OnInit {
         const max = this.maxPrice === null ? Infinity : this.maxPrice;
         return price >= min && price <= max;
       });
-  }
+    }
 
     switch (this.sortBy) {
       case 'price_asc':
