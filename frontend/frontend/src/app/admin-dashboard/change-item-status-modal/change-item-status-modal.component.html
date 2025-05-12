@@ -3,11 +3,11 @@
     <div class="modal-dialog modal-dialog-centered" role="document">
       <div class="modal-content">
         <div class="modal-header">
-          <h5 class="modal-title">Change Status for Item: {{ item.productName }} (Order #{{ order.id }})</h5>
+          <h5 class="modal-title">Change Status for Item: {{ item?.productName }} (Order #{{ order?.id }})</h5>
           <button type="button" class="btn-close" aria-label="Close" (click)="onClose()"></button>
         </div>
         <div class="modal-body">
-          <p>Current Status: <strong>{{ item.status }}</strong></p>
+          <p>Current Status: <strong>{{ item?.status }}</strong></p>
           <form [formGroup]="statusForm" (ngSubmit)="onSubmit()">
             <div class="mb-3">
               <label for="newStatus" class="form-label">New Status:</label>

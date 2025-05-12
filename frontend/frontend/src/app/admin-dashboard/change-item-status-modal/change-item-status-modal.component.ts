@@ -7,7 +7,10 @@ import { Order, OrderItem } from '../../models/order.model';
 export const ORDER_ITEM_STATUSES = [
   'PREPARING',
   'SHIPPED',
-  'DELIVERED'
+  'DELIVERED',
+  'REFUNDED',
+  'EXCHANGED',
+  'CANCELLED_BY_ADMIN'
 ];
 
 @Component({
@@ -49,11 +52,32 @@ export class ChangeItemStatusModalComponent implements OnInit {
   }
   
   onSubmit(): void {
-    if (this.statusForm.valid && this.item.id) {
-      this.saveStatus.emit({ 
+    console.log('Form submitted:', this.statusForm);
+    console.log('Form validity:', this.statusForm.valid);
+    console.log('Form value:', this.statusForm.value);
+    console.log('Item ID:', this.item?.id);
+    
+    if (this.statusForm.valid && this.item && this.item.id) {
+      const payload = { 
         itemId: this.item.id, 
         newStatus: this.statusForm.value.newStatus 
+      };
+      
+      console.log('Emitting saveStatus event with payload:', payload);
+      this.saveStatus.emit(payload);
+    } else {
+      console.error('Form is invalid or item is missing ID:', {
+        formValid: this.statusForm.valid,
+        itemExists: !!this.item,
+        itemId: this.item?.id
       });
+      
+      if (this.statusForm.invalid) {
+        Object.keys(this.statusForm.controls).forEach(key => {
+          const control = this.statusForm.get(key);
+          console.error(`Control ${key} errors:`, control?.errors);
+        });
+      }
     }
   }
 

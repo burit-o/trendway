@@ -83,7 +83,7 @@ public class OrderController {
     // 🔃 Sipariş durumunu güncelle (Sadece SELLER -> PREPARING → SHIPPED →
     // DELIVERED)
     @PutMapping("/update-status")
-    @PreAuthorize("hasRole('SELLER')")
+    @PreAuthorize("hasRole('ADMIN') or hasRole('SELLER')")
     public ResponseEntity<String> updateStatus(
             @RequestParam Long orderId,
             @RequestParam Long sellerId,
@@ -93,11 +93,23 @@ public class OrderController {
     }
 
     @PutMapping("/update-item-status")
+    @PreAuthorize("hasRole('ADMIN') or hasRole('SELLER')")
     public ResponseEntity<String> updateOrderItemStatus(
             @RequestParam Long orderItemId,
-            @RequestParam OrderItemStatus status) {
-        orderService.updateOrderItemStatus(orderItemId, status);
-        return ResponseEntity.ok("Order item status updated to " + status.name());
+            @RequestParam OrderItemStatus status,
+            Principal principal) {
+        try {
+            // Admin veya Satıcı kontrolü yapılacak
+            String userEmail = principal.getName();
+            orderService.updateOrderItemStatus(orderItemId, status, userEmail);
+            return ResponseEntity.ok("Order item status updated to " + status.name());
+        } catch (SecurityException e) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).body(e.getMessage());
+        } catch (IllegalStateException e) {
+            return ResponseEntity.status(HttpStatus.CONFLICT).body(e.getMessage());
+        } catch (RuntimeException e) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(e.getMessage());
+        }
     }
 
     // ❌ Siparişi Admin iptal eder

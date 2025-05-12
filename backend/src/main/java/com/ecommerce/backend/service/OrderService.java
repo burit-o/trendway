@@ -213,18 +213,70 @@ public class OrderService {
         orderRepository.save(order);
     }
 
-    public void updateOrderItemStatus(Long orderItemId, OrderItemStatus status) {
+    @Transactional
+    public void updateOrderItemStatus(Long orderItemId, OrderItemStatus status, String userEmail) {
         OrderItem orderItem = orderItemRepository.findById(orderItemId)
                 .orElseThrow(() -> new RuntimeException("Order item not found"));
 
-        // Ürün sahibinin kontrolü (opsiyonel, controller'da yapılabilir ama burada da olması iyi olur)
-        // Bu metod genel bir status güncelleme olduğu için şimdilik satıcı kontrolü eklemiyorum.
-        // Satıcıya özel iptal için ayrı bir metodumuz olacak.
+        // Kullanıcı kontrolü
+        User user = userRepository.findByEmail(userEmail)
+                .orElseThrow(() -> {
+                    logger.error("User not found with email: {}", userEmail);
+                    return new RuntimeException("User not found with email: " + userEmail);
+                });
 
+        if (user.getRole() == Role.ADMIN) {
+            // Admin tüm durumları değiştirebilir
+            logger.info("Admin {} is changing status of order item {} to {}", userEmail, orderItemId, status);
+        } 
+        else if (user.getRole() == Role.SELLER) {
+            // Satıcı sadece kendi ürünlerinin durumunu değiştirebilir
+            Product product = orderItem.getProduct();
+            
+            if (product == null || product.getSeller() == null) {
+                logger.error("Product or seller information is missing for order item ID: {}", orderItemId);
+                throw new RuntimeException("Product or seller information is missing for the order item.");
+            }
+            
+            if (!product.getSeller().getId().equals(user.getId())) {
+                logger.warn("Unauthorized attempt by seller {} to update status for order item {} that belongs to another seller", 
+                    userEmail, orderItemId);
+                throw new SecurityException("You are not authorized to update the status of this order item as you are not the seller of the product.");
+            }
+            
+            // Satıcının yapabileceği durum değişikliklerini kontrol et
+            if (status == OrderItemStatus.CANCELLED_BY_ADMIN) {
+                logger.warn("Seller {} attempted to set admin-only status {} for order item {}", userEmail, status, orderItemId);
+                throw new SecurityException("Sellers cannot set this status: " + status);
+            }
+            
+            logger.info("Seller {} is changing status of order item {} to {}", userEmail, orderItemId, status);
+        }
+        else {
+            // Diğer roller durum değiştiremez
+            logger.warn("Unauthorized user with role {} attempted to update order item status", user.getRole());
+            throw new SecurityException("You are not authorized to update order item status. Required role: ADMIN or SELLER");
+        }
+
+        // Mevcut durumda yapılamayacak değişiklikleri kontrol et
+        if (orderItem.getStatus() == OrderItemStatus.DELIVERED ||
+            orderItem.getStatus() == OrderItemStatus.CANCELLED ||
+            orderItem.getStatus() == OrderItemStatus.CANCELLED_BY_SELLER ||
+            orderItem.getStatus() == OrderItemStatus.CANCELLED_BY_ADMIN ||
+            orderItem.getStatus() == OrderItemStatus.REFUNDED) {
+            
+            logger.warn("Cannot change status from final state {} to {}", orderItem.getStatus(), status);
+            throw new IllegalStateException("Cannot change status from final state: " + orderItem.getStatus());
+        }
+        
+        // Durumu güncelle
         orderItem.setStatus(status);
         orderItemRepository.save(orderItem);
 
+        // Sipariş durumunu genel olarak kontrol et ve gerekirse güncelle
         updateOverallOrderStatus(orderItem.getOrder());
+        
+        logger.info("Order item ID: {} status successfully updated to {}", orderItemId, status);
     }
 
     @Transactional

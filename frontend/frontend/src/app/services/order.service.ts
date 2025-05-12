@@ -49,13 +49,17 @@ export class OrderService {
   }
 
   // Sipariş kaleminin durumunu güncelle (genel amaçlı)
-  updateOrderItemStatus(orderItemId: number, status: string): Observable<any> { // Dönen tip backend'e göre ayarlanabilir, şimdilik any
+  updateOrderItemStatus(orderItemId: number, status: string): Observable<any> {
+    console.log(`Calling API to update order item ${orderItemId} status to ${status}`);
+    
+    // Backend URL: /api/orders/update-item-status?orderItemId=123&status=SHIPPED
+    // Backend endpoint'i bir body beklemiyor, sadece query parametreleri alıyor
     return this.http.put(`${this.apiUrl}/update-item-status`, null, {
       params: {
         orderItemId: orderItemId.toString(),
         status: status
       },
-      responseType: 'text' // JSON ayrıştırma hatasını önlemek için eklendi
+      responseType: 'text' // Backend text response döndürüyor
     });
   }
 

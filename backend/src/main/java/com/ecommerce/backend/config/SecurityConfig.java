@@ -63,7 +63,7 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.GET, "/api/orders/seller").hasRole("SELLER")
                         .requestMatchers(HttpMethod.GET, "/api/orders/refund-requests/by-seller").hasRole("SELLER")
                         .requestMatchers(HttpMethod.PUT, "/api/orders/item/{orderItemId}/cancel-by-seller").hasRole("SELLER")
-                        .requestMatchers(HttpMethod.PUT, "/api/orders/update-item-status").hasRole("SELLER")
+                        .requestMatchers(HttpMethod.PUT, "/api/orders/update-item-status").hasAnyRole("ADMIN", "SELLER")
                         .requestMatchers("/api/orders/**").authenticated()
                         .anyRequest().authenticated()
                 )

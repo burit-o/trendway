@@ -76,6 +76,7 @@ export class OrderManagementComponent implements OnInit {
     if (item.status === OrderItemStatus.DELIVERED || 
         item.status === OrderItemStatus.CANCELED || 
         item.status === OrderItemStatus.CANCELLED_BY_SELLER ||
+        item.status === OrderItemStatus.CANCELLED_BY_ADMIN ||
         item.status === OrderItemStatus.REFUNDED) {
       console.warn('Cannot change status for item in status:', item.status);
       return;
@@ -97,18 +98,45 @@ export class OrderManagementComponent implements OnInit {
       this.error = 'Failed to update status: Invalid data.';
       return;
     }
+    
+    console.log('Attempting to update item status:', event);
     this.loading = true;
+    
     this.orderService.updateOrderItemStatus(event.itemId, event.newStatus).subscribe({
-      next: () => {
+      next: (response) => {
         this.loading = false;
+        console.log('Status updated successfully:', response);
         this.handleCloseChangeStatusModal();
         this.loadAllOrders(); // Listeyi yenile
-        console.log(`Item ${event.itemId} status updated to ${event.newStatus}`);
       },
       error: (err) => {
         this.loading = false;
         console.error('Error updating item status:', err);
-        this.error = `Failed to update item status: ${err.error?.message || err.message}`;
+        console.error('Error details:', {
+          status: err.status,
+          statusText: err.statusText,
+          error: err.error,
+          message: err.message
+        });
+        
+        let errorMessage = 'Failed to update item status';
+        
+        if (err.status === 403) {
+          errorMessage = 'You are not authorized to update this item status.';
+        } else if (err.status === 409) {
+          errorMessage = 'Cannot change status: the item is in a final state.';
+        } else if (err.status === 404) {
+          errorMessage = 'The order item was not found.';
+        } else if (err.error && typeof err.error === 'string') {
+          errorMessage = err.error;
+        } else if (err.error && err.error.message) {
+          errorMessage = err.error.message;
+        } else if (err.message) {
+          errorMessage = err.message;
+        }
+        
+        this.error = errorMessage;
+        alert('Error: ' + errorMessage); // Kullanıcıya açık mesaj göster
         setTimeout(() => this.error = '', 5000);
       }
     });
