@@ -43,6 +43,11 @@ export class OrderService {
     return this.http.get<Order[]>(`${this.apiUrl}/seller`);
   }
 
+  // Admin için tüm siparişleri getir
+  getAllOrders(): Observable<Order[]> {
+    return this.http.get<Order[]>(`${this.apiUrl}/all`);
+  }
+
   // Sipariş kaleminin durumunu güncelle (genel amaçlı)
   updateOrderItemStatus(orderItemId: number, status: string): Observable<any> { // Dönen tip backend'e göre ayarlanabilir, şimdilik any
     return this.http.put(`${this.apiUrl}/update-item-status`, null, {

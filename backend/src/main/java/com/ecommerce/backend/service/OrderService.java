@@ -539,4 +539,9 @@ public class OrderService {
         return orderItemRepository.save(orderItem);
     }
 
+    // Tüm siparişleri getiren metod (admin için)
+    public List<Order> getAllOrders() {
+        return orderRepository.findAll();
+    }
+
 }

@@ -84,7 +84,7 @@ public class ProductController {
     }
 
     @PutMapping("/{productId}")
-    @PreAuthorize("hasRole('SELLER')")
+    @PreAuthorize("hasAnyRole('SELLER', 'ADMIN')")
     public ResponseEntity<Product> updateProductDetails(
             @PathVariable Long productId,
             @RequestBody Product productDetails,
@@ -92,5 +92,12 @@ public class ProductController {
     ) {
         Product updatedProduct = productService.updateProductDetails(productId, productDetails, principal.getName());
         return ResponseEntity.ok(updatedProduct);
+    }
+
+    @GetMapping("/not-deleted")
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<List<Product>> getAllNotDeletedProducts() {
+        List<Product> products = productService.getAllNotDeletedProducts();
+        return ResponseEntity.ok(products);
     }
 }

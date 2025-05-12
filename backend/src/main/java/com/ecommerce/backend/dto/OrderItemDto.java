@@ -19,6 +19,10 @@ public class OrderItemDto {
     private Double priceAtPurchase;
     private String status;
     
+    // Satıcı bilgileri
+    private Long sellerId;
+    private String sellerName;
+    
     // İade ile ilgili alanlar
     private RefundStatus refundStatus;
     private String refundReason;
@@ -39,6 +43,10 @@ public class OrderItemDto {
                 .quantity(item.getQuantity())
                 .priceAtPurchase(item.getPriceAtPurchase())
                 .status(item.getStatus() != null ? item.getStatus().name() : null)
+                .sellerId(item.getProduct() != null && item.getProduct().getSeller() != null ? 
+                          item.getProduct().getSeller().getId() : null)
+                .sellerName(item.getProduct() != null && item.getProduct().getSeller() != null ? 
+                           item.getProduct().getSeller().getFullName() : null)
                 .refundStatus(item.getRefundStatus())
                 .refundReason(item.getRefundReason())
                 .refundRequestedAt(item.getRefundRequestedAt())

@@ -23,8 +23,12 @@ export interface OrderItem {
   refundRequestedAt?: Date;
   refundProcessedAt?: Date;
   // Backend tarafından gönderilen ek alanlar
+  productId?: number;
   productName?: string;
   imageUrl?: string;
+  // Satıcı bilgileri
+  sellerId?: number;
+  sellerName?: string;
   order?: any; // Tip çakışmalarını önlemek için any olarak belirtildi
 }
 
@@ -43,6 +47,7 @@ export enum OrderItemStatus {
   EXCHANGE_REQUESTED = 'EXCHANGE_REQUESTED',
   EXCHANGE_APPROVED = 'EXCHANGE_APPROVED',
   EXCHANGE_REJECTED = 'EXCHANGE_REJECTED',
-  EXCHANGED = 'EXCHANGED'
+  EXCHANGED = 'EXCHANGED',
+  REFUNDED = 'REFUNDED'
   // Backend Enum ile aynı değerlere sahip olmalıdır
 } 

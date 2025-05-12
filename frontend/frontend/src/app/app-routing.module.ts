@@ -14,6 +14,8 @@ import { SellerOrdersComponent } from './seller-dashboard/seller-orders/seller-o
 import { RefundRequestsComponent } from './refund-requests/refund-requests.component';
 import { AdminDashboardComponent } from './admin-dashboard/admin-dashboard.component';
 import { UserManagementComponent } from './admin-dashboard/user-management/user-management.component';
+import { ProductManagementComponent } from './admin-dashboard/product-management/product-management.component';
+import { OrderManagementComponent } from './admin-dashboard/order-management/order-management.component';
 
 const routes: Routes = [
   {
@@ -72,7 +74,9 @@ const routes: Routes = [
     data: { expectedRole: 'ADMIN' },
     children: [
       { path: '', redirectTo: 'users', pathMatch: 'full' },
-      { path: 'users', component: UserManagementComponent }
+      { path: 'users', component: UserManagementComponent },
+      { path: 'products', component: ProductManagementComponent },
+      { path: 'orders', component: OrderManagementComponent }
     ]
   },
   {

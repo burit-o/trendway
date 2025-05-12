@@ -3,6 +3,7 @@ package com.ecommerce.backend.service;
 import com.ecommerce.backend.model.Category;
 import com.ecommerce.backend.model.Product;
 import com.ecommerce.backend.model.User;
+import com.ecommerce.backend.model.Role;
 import com.ecommerce.backend.model.Review;
 import com.ecommerce.backend.repository.CategoryRepository;
 import com.ecommerce.backend.repository.ProductRepository;
@@ -114,15 +115,16 @@ public class ProductService {
         }
     }
 
-    public Product updateProductDetails(Long productId, Product productDetails, String sellerEmail) {
+    public Product updateProductDetails(Long productId, Product productDetails, String userEmail) {
         Product existingProduct = productRepository.findById(productId)
                 .orElseThrow(() -> new RuntimeException("Product not found with ID: " + productId));
 
-        User seller = userRepository.findByEmail(sellerEmail)
-                .orElseThrow(() -> new RuntimeException("Seller not found with email: " + sellerEmail));
+        User user = userRepository.findByEmail(userEmail)
+                .orElseThrow(() -> new RuntimeException("User not found with email: " + userEmail));
 
-        if (!existingProduct.getSeller().getId().equals(seller.getId())) {
-            throw new RuntimeException("Forbidden: You can only update your own products."); // Daha spesifik bir exception atılabilir
+        // ADMIN her ürünü güncelleyebilir, SELLER sadece kendine ait ürünleri güncelleyebilir
+        if (user.getRole() != Role.ADMIN && !existingProduct.getSeller().getId().equals(user.getId())) {
+            throw new RuntimeException("Forbidden: You can only update your own products.");
         }
 
         // Güncellenebilir alanları ayarla
@@ -136,16 +138,25 @@ public class ProductService {
             existingProduct.setPrice(productDetails.getPrice());
         }
         if (productDetails.getImageUrls() != null && !productDetails.getImageUrls().isEmpty()) {
-            // Frontend sadece bir URL gönderiyorsa ve bu ilk URL olacaksa:
-            // mevcut listeyi temizleyip yenisini ekleyebiliriz ya da daha karmaşık bir birleştirme logiği olabilir.
-            // Şimdilik basitçe ilk gelen URL'yi alıyoruz veya listenin tamamını güncelliyoruz.
             existingProduct.setImageUrls(productDetails.getImageUrls()); 
         }
-        // active durumu için productDetails'den gelen değeri alalım
+        
+        // Active durumu için özel kontrol
         existingProduct.setActive(productDetails.isActive());
-        // stock durumu şimdilik güncellenmiyor, gerekirse eklenebilir
+        
+        // Stock durumu güncellemesi
+        if (productDetails.getStock() > 0) {
+            existingProduct.setStock(productDetails.getStock());
+        }
 
         return productRepository.save(existingProduct);
+    }
+
+    // Silinmemiş tüm ürünleri getirme metodu (aktif ve inaktif dahil)
+    public List<Product> getAllNotDeletedProducts() {
+        List<Product> products = productRepository.findByDeletedByAdminFalse();
+        products.forEach(this::calculateAndSetProductRating);
+        return products;
     }
 
 }

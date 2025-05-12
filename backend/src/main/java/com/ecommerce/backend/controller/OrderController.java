@@ -328,4 +328,21 @@ public class OrderController {
                     .body("İade talebi reddedilemedi: " + e.getMessage());
         }
     }
+
+    // Admin: Tüm siparişleri getir
+    @GetMapping("/all")
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<?> getAllOrders() {
+        try {
+            List<Order> allOrders = orderService.getAllOrders();
+            List<OrderDto> orderDtos = allOrders.stream()
+                                            .map(OrderDto::fromEntity)
+                                            .collect(Collectors.toList());
+            return ResponseEntity.ok(orderDtos);
+        } catch (Exception e) {
+            logger.error("Failed to fetch all orders: {}", e.getMessage(), e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body("Failed to fetch orders: " + e.getMessage());
+        }
+    }
 }

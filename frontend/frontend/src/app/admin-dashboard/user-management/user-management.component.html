@@ -16,13 +16,7 @@
     <strong>Error:</strong> {{ error }}
   </div>
 
-  <!-- Debug info -->
-  <div *ngIf="authService.currentUserValue" class="alert alert-info mb-3">
-    <h5>Debug Info</h5>
-    <p><strong>Current User Role:</strong> {{ authService.currentUserValue.role }}</p>
-    <p><strong>Is Admin:</strong> {{ isAdmin }}</p>
-    <p><strong>Token Present:</strong> {{ authService.getToken() ? 'Yes' : 'No' }}</p>
-  </div>
+
   
   <div *ngIf="!loading && !error && users.length === 0 && isAdmin" class="alert alert-info">
     No users found.
