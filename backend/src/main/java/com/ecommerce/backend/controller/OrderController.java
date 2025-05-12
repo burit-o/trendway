@@ -155,7 +155,13 @@ public class OrderController {
                         .body("You are not allowed to view orders of another user.");
             }
 
-            return ResponseEntity.ok(orderService.getOrdersByCustomer(userId));
+            List<Order> orders = orderService.getOrdersByCustomer(userId);
+            // Convert List<Order> to List<OrderDto>
+            List<OrderDto> orderDtos = orders.stream()
+                                             .map(OrderDto::fromEntity)
+                                             .collect(Collectors.toList());
+            return ResponseEntity.ok(orderDtos); // Return DTO list
+
         } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST)
                     .body("Failed to fetch orders: " + e.getMessage());
