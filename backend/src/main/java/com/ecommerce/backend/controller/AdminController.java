@@ -9,6 +9,7 @@ import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import java.util.stream.Collectors;
 
 @RestController
 @RequestMapping("/api/admin")
@@ -31,6 +32,15 @@ public class AdminController {
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new RuntimeException("User not found"));
         return ResponseEntity.ok(user);
+    }
+
+    @GetMapping("/seller-requests")
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<List<User>> getSellerRequests() {
+        List<User> pendingRequests = userRepository.findAll().stream()
+                .filter(User::isSellerRequested)
+                .collect(Collectors.toList());
+        return ResponseEntity.ok(pendingRequests);
     }
 
     @PutMapping("/users/{userId}/ban")
@@ -57,5 +67,21 @@ public class AdminController {
         user.setBanned(false);
         userRepository.save(user);
         return ResponseEntity.ok("User unbanned successfully");
+    }
+
+    @PutMapping("/reject-seller-request/{userId}")
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<String> rejectSellerRequest(@PathVariable Long userId) {
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new RuntimeException("User not found"));
+
+        if (!user.isSellerRequested()) {
+            return ResponseEntity.badRequest().body("User does not have a pending seller request.");
+        }
+
+        user.setSellerRequested(false);
+        userRepository.save(user);
+
+        return ResponseEntity.ok("Seller request rejected successfully.");
     }
 } 

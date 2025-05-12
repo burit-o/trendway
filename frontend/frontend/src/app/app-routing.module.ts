@@ -17,6 +17,7 @@ import { UserManagementComponent } from './admin-dashboard/user-management/user-
 import { ProductManagementComponent } from './admin-dashboard/product-management/product-management.component';
 import { OrderManagementComponent } from './admin-dashboard/order-management/order-management.component';
 import { CategoryManagementComponent } from './admin-dashboard/category-management/category-management.component';
+import { SellerRequestsComponent } from './admin-dashboard/seller-requests/seller-requests.component';
 
 const routes: Routes = [
   {
@@ -78,7 +79,8 @@ const routes: Routes = [
       { path: 'users', component: UserManagementComponent },
       { path: 'products', component: ProductManagementComponent },
       { path: 'orders', component: OrderManagementComponent },
-      { path: 'categories', component: CategoryManagementComponent }
+      { path: 'categories', component: CategoryManagementComponent },
+      { path: 'seller-requests', component: SellerRequestsComponent }
     ]
   },
   {

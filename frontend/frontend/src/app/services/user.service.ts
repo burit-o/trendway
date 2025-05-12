@@ -48,6 +48,24 @@ export class UserService {
     return this.http.put(`${this.apiUrl}/user/request-seller-status`, {}, { responseType: 'text' });
   }
 
+  // --- Admin Specific Methods ---
+
+  getSellerRequests(): Observable<User[]> {
+    return this.http.get<User[]>(`${this.apiUrl}/admin/seller-requests`)
+      .pipe(catchError(this.handleError));
+  }
+
+  approveSellerRequest(userId: number): Observable<string> {
+    // Note: This endpoint is in UserController, adjust if moved later
+    return this.http.put(`${this.apiUrl}/user/approve-seller-request/${userId}`, {}, { responseType: 'text' })
+      .pipe(catchError(this.handleError));
+  }
+
+  rejectSellerRequest(userId: number): Observable<string> {
+    return this.http.put(`${this.apiUrl}/admin/reject-seller-request/${userId}`, {}, { responseType: 'text' })
+      .pipe(catchError(this.handleError));
+  }
+
   private handleError(error: HttpErrorResponse) {
     if (error.status === 403) {
       console.error('Access denied. Make sure you have the ADMIN role to access this resource.');

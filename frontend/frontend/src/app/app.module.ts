@@ -8,20 +8,16 @@ import { AppComponent } from './app.component';
 import { JwtInterceptor } from './auth/interceptors/jwt.interceptor';
 import { HttpErrorInterceptor } from './auth/interceptors/http-error.interceptor';
 import { HttpRequestInterceptor } from './auth/interceptors/http-request.interceptor';
-import { ProductManagementComponent } from './admin-dashboard/product-management/product-management.component';
-import { SellerRequestsComponent } from './admin-dashboard/seller-requests/seller-requests.component';
 
 @NgModule({
   declarations: [
     AppComponent,
-    SellerRequestsComponent
   ],
   imports: [
     BrowserModule,
     AppRoutingModule,
     HttpClientModule,
     ReactiveFormsModule,
-    ProductManagementComponent
   ],
   providers: [
     { provide: HTTP_INTERCEPTORS, useClass: JwtInterceptor, multi: true },

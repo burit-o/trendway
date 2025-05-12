@@ -55,7 +55,7 @@
           <td>{{ product.name }}</td>
           <td>${{ product.price.toFixed(2) }}</td>
           <td>{{ product.stock }}</td>
-          <td>{{ product.category?.name || 'N/A' }}</td>
+          <td>{{ product.category.name || 'N/A' }}</td>
           <td>
             <span *ngIf="product.averageRating">
               <i class="bi bi-star-fill text-warning"></i> {{ product.averageRating.toFixed(1) }}
