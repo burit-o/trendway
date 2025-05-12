@@ -55,6 +55,11 @@ export class CategoryService {
   }
 
   deleteCategory(id: number): Observable<any> {
-    return this.http.delete(`${this.apiUrl}/delete/${id}`);
+    const token = this.authService.getToken();
+    const headers = new HttpHeaders({
+      'Authorization': `Bearer ${token}`
+    });
+    
+    return this.http.delete(`${this.apiUrl}/delete/${id}`, { headers });
   }
 }

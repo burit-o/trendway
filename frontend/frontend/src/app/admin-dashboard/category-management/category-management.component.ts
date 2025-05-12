@@ -92,12 +92,6 @@ export class CategoryManagementComponent implements OnInit {
   }
   
   deleteCategory(id: number): void {
-    // İşlevsiz buton olduğu için sadece konsola log yazacak
-    console.log(`Delete category requested for ID: ${id}`);
-    alert('Delete functionality will be implemented in the future.');
-    
-    /* 
-    // İleride yapılacak gerçek silme işlemi:
     if (confirm('Are you sure you want to delete this category? This action cannot be undone.')) {
       this.loading = true;
       this.categoryService.deleteCategory(id).subscribe({
@@ -115,6 +109,5 @@ export class CategoryManagementComponent implements OnInit {
         }
       });
     }
-    */
   }
 } 
