@@ -70,6 +70,10 @@ export class LoginComponent implements OnInit {
               // Sepete ürün eklendikten sonra yönlendirme
               if (response.role === 'CUSTOMER' || response.role === 'USER') {
                 this.router.navigate(['/products']);
+              } else if (response.role === 'ADMIN') {
+                this.router.navigate(['/panel']);
+              } else if (response.role === 'SELLER') {
+                this.router.navigate(['/dashboard']);
               } else {
                 this.router.navigateByUrl(returnUrl);
               }
@@ -79,6 +83,10 @@ export class LoginComponent implements OnInit {
               // Sepete ekleme başarısız olsa bile kullanıcıyı yönlendir
               if (response.role === 'CUSTOMER' || response.role === 'USER') {
                 this.router.navigate(['/products']);
+              } else if (response.role === 'ADMIN') {
+                this.router.navigate(['/panel']);
+              } else if (response.role === 'SELLER') {
+                this.router.navigate(['/dashboard']);
               } else {
                 this.router.navigateByUrl(returnUrl);
               }

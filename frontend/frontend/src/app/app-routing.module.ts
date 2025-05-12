@@ -12,6 +12,7 @@ import { RoleGuard } from './auth/guards/role.guard';
 import { SellerProductsComponent } from './seller-dashboard/seller-products/seller-products.component';
 import { SellerOrdersComponent } from './seller-dashboard/seller-orders/seller-orders.component';
 import { RefundRequestsComponent } from './refund-requests/refund-requests.component';
+import { AdminDashboardComponent } from './admin-dashboard/admin-dashboard.component';
 
 const routes: Routes = [
   {
@@ -62,6 +63,12 @@ const routes: Routes = [
       { path: 'orders', component: SellerOrdersComponent },
       { path: 'refund-requests', component: RefundRequestsComponent }
     ]
+  },
+  {
+    path: 'panel',
+    component: AdminDashboardComponent,
+    canActivate: [AuthGuard, RoleGuard],
+    data: { expectedRole: 'ADMIN' }
   },
   {
     path: 'refund-requests',
